@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "displayName": "Audit missing CostCenter tag",
+    "policyType": "Custom",
+    "mode": "Indexed",
+    "description": "Audits resources that are missing a CostCenter tag. Use this custom policy definition to enforce organizational tagging standards for cost allocation and chargeback. The Indexed mode means this policy only evaluates resources that support tags and location (excludes child resources like subnets).",
+    "metadata": {
+      "version": "1.0.0",
+      "category": "Tags",
+      "source": "az104-cram-lab"
+    },
+    "parameters": {},
+    "policyRule": {
+      "if": {
+        "field": "tags['CostCenter']",
+        "exists": "false"
+      },
+      "then": {
+        "effect": "audit"
+      }
+    }
+  }
+}

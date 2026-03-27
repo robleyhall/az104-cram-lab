@@ -1,0 +1,119 @@
+graph TD
+    subgraph IaaS["🖥️ IaaS: Virtual Machines"]
+        VM["Azure VM"]
+        VMComponents["Components:\n• OS Disk (Managed)\n• Data Disks\n• NIC → VNet/Subnet\n• Public IP (optional)\n• NSG"]
+
+        subgraph AvSet["Availability Set"]
+            FD["Fault Domains\n2-3 racks"]
+            UD["Update Domains\n5-20 domains"]
+            ASVM1["VM-1\nFD0 · UD0"]
+            ASVM2["VM-2\nFD1 · UD1"]
+            ASVM3["VM-3\nFD0 · UD2"]
+            FD --- ASVM1
+            FD --- ASVM3
+            UD --- ASVM2
+        end
+
+        subgraph AvZone["Availability Zones"]
+            Zone1["Zone 1\nDatacenter 1"]
+            Zone2["Zone 2\nDatacenter 2"]
+            Zone3["Zone 3\nDatacenter 3"]
+            ZVM1["VM-1"]
+            ZVM2["VM-2"]
+            ZVM3["VM-3"]
+            Zone1 --- ZVM1
+            Zone2 --- ZVM2
+            Zone3 --- ZVM3
+        end
+
+        subgraph VMSS["VM Scale Sets"]
+            VMSSNode["VMSS"]
+            VMSSFeatures["Features:\n• Autoscale rules\n• Uniform / Flexible\n• Custom image\n• Load Balancer integration"]
+            ScaleRule["Scale Rules:\nCPU > 75% → +1 instance\nCPU < 25% → -1 instance"]
+            VMSSNode --> VMSSFeatures
+            VMSSNode --> ScaleRule
+        end
+
+        VM --> VMComponents
+        VM --> AvSet
+        VM --> AvZone
+        VM --> VMSS
+    end
+
+    subgraph PaaS["🌐 PaaS: App Service"]
+        ASP["App Service Plan\n• SKU: Free, Basic,\n  Standard, Premium\n• OS: Windows / Linux\n• Region"]
+
+        WebApp["Web App"]
+        API["API App"]
+        FuncApp["Function App"]
+
+        ASP --> WebApp
+        ASP --> API
+        ASP --> FuncApp
+
+        subgraph Slots["Deployment Slots"]
+            Prod["Production Slot\napp.azurewebsites.net"]
+            Staging["Staging Slot\napp-staging.azurewebsites.net"]
+            Swap["Swap Operation\nZero-downtime deploy"]
+            Staging -->|"swap"| Swap -->|"promote"| Prod
+        end
+
+        subgraph AppConfig["Configuration"]
+            AppSettings["App Settings\nEnvironment variables\nSlot-specific optional"]
+            ConnStrings["Connection Strings\nDatabase / Storage"]
+            CustomDomain["Custom Domains\n+ SSL Certificates"]
+        end
+
+        WebApp --> Slots
+        WebApp --> AppConfig
+    end
+
+    subgraph Containers["📦 Containers"]
+        subgraph ACR["Azure Container Registry"]
+            ACRNode["ACR\nmyacr.azurecr.io"]
+            ACRFeatures["Features:\n• Geo-replication\n• Tasks (build)\n• SKUs: Basic, Standard, Premium"]
+        end
+
+        subgraph ACI["Azure Container Instances"]
+            ACINode["ACI"]
+            ACIFeatures["Features:\n• Serverless\n• Fast startup\n• Per-second billing\n• Container Groups"]
+        end
+
+        subgraph ContainerApps["Azure Container Apps"]
+            CANode["Container Apps"]
+            CAFeatures["Features:\n• Managed Kubernetes\n• Scale to zero\n• Dapr integration\n• Revisions"]
+        end
+
+        subgraph AKS["Azure Kubernetes Service"]
+            AKSNode["AKS Cluster"]
+            AKSFeatures["Features:\n• Managed control plane\n• Node pools\n• RBAC integration\n• Monitoring"]
+        end
+
+        ACRNode -->|"pull image"| ACINode
+        ACRNode -->|"pull image"| CANode
+        ACRNode -->|"pull image"| AKSNode
+    end
+
+    subgraph ARM["🔧 Infrastructure as Code"]
+        direction LR
+        ARMTemplate["ARM Template\nJSON"]
+        Bicep["Bicep\nDSL → compiles to ARM"]
+        Deployment["Deployment\n• Resource Group scope\n• Subscription scope\n• Management Group scope"]
+        Resources["Deployed Resources"]
+
+        ARMTemplate --> Deployment
+        Bicep -->|"compile"| ARMTemplate
+        Deployment --> Resources
+    end
+
+    classDef iaas fill:#2980b9,stroke:#1f6da0,color:#fff
+    classDef paas fill:#27ae60,stroke:#1e8449,color:#fff
+    classDef container fill:#e67e22,stroke:#d35400,color:#fff
+    classDef iac fill:#8e44ad,stroke:#6c3483,color:#fff
+    classDef zone fill:#f39c12,stroke:#d68910,color:#333
+
+    class VM,VMComponents,ASVM1,ASVM2,ASVM3,FD,UD,VMSSNode,VMSSFeatures,ScaleRule iaas
+    class ASP,WebApp,API,FuncApp,Prod,Staging,Swap,AppSettings,ConnStrings,CustomDomain paas
+    class ACRNode,ACRFeatures,ACINode,ACIFeatures,CANode,CAFeatures,AKSNode,AKSFeatures container
+    class ARMTemplate,Bicep,Deployment,Resources iac
+    class Zone1,Zone2,Zone3,ZVM1,ZVM2,ZVM3 zone

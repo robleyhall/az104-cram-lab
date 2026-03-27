@@ -1,0 +1,95 @@
+graph TD
+    subgraph Hub["🔷 Hub VNet · 10.0.0.0/16"]
+        subgraph HubSubs["Subnets"]
+            AzBastionSub["AzureBastionSubnet\n10.0.1.0/26\n🔒 Required name"]
+            GWSub["GatewaySubnet\n10.0.2.0/27\n🔒 Required name"]
+            FWSub["AzureFirewallSubnet\n10.0.3.0/26\n🔒 Required name"]
+            MgmtSub["management\n10.0.4.0/24"]
+            HubDef["default\n10.0.0.0/24"]
+        end
+
+        Bastion["Azure Bastion\nSecure RDP/SSH"]
+        VPNGw["VPN Gateway\nS2S / P2S"]
+        FW["Azure Firewall\nNVA"]
+
+        AzBastionSub --- Bastion
+        GWSub --- VPNGw
+        FWSub --- FW
+
+        HubNSG1["NSG: hub-mgmt-nsg"]
+        HubNSG2["NSG: hub-default-nsg"]
+        HubNSG1 -.->|attached| MgmtSub
+        HubNSG2 -.->|attached| HubDef
+    end
+
+    subgraph Spoke1["🟢 Spoke1 VNet · 10.1.0.0/16"]
+        subgraph S1Subs["Subnets"]
+            S1Def["default\n10.1.0.0/24"]
+            S1App["app\n10.1.1.0/24"]
+            S1Data["data\n10.1.2.0/24"]
+        end
+
+        S1NSG1["NSG: spoke1-default-nsg"]
+        S1NSG2["NSG: spoke1-app-nsg"]
+        S1NSG3["NSG: spoke1-data-nsg"]
+
+        S1NSG1 -.->|attached| S1Def
+        S1NSG2 -.->|attached| S1App
+        S1NSG3 -.->|attached| S1Data
+
+        subgraph ASG1["ASG: web-servers"]
+            WebVM1["web-vm-01"]
+            WebVM2["web-vm-02"]
+        end
+        subgraph ASG2["ASG: db-servers"]
+            DBVM1["db-vm-01"]
+        end
+
+        S1App --- WebVM1
+        S1App --- WebVM2
+        S1Data --- DBVM1
+    end
+
+    subgraph Spoke2["🟡 Spoke2 VNet · 10.2.0.0/16"]
+        subgraph S2Subs["Subnets"]
+            S2Def["default\n10.2.0.0/24"]
+            S2App["app\n10.2.1.0/24"]
+        end
+
+        S2NSG1["NSG: spoke2-default-nsg"]
+        S2NSG2["NSG: spoke2-app-nsg"]
+
+        S2NSG1 -.->|attached| S2Def
+        S2NSG2 -.->|attached| S2App
+
+        AppVM["app-vm-01"]
+        S2App --- AppVM
+    end
+
+    Hub <=="VNet Peering\nhub ↔ spoke1\nAllowGatewayTransit"==> Spoke1
+    Hub <=="VNet Peering\nhub ↔ spoke2\nAllowGatewayTransit"==> Spoke2
+
+    Bastion -->|"secure connect\n(no public IP needed)"| WebVM1
+    Bastion -->|secure connect| AppVM
+
+    OnPrem["🏢 On-Premises\nNetwork"]
+    OnPrem <-->|"VPN / ExpressRoute"| VPNGw
+
+    subgraph NSGRules["📋 NSG Rule Processing"]
+        direction LR
+        Inbound["Inbound Rules\nPriority 100-4096"]
+        Process["Process:\n1. Lowest priority #\n2. Allow or Deny\n3. First match wins"]
+        Default["Default Rules:\n65000: AllowVNetInBound\n65001: AllowAzureLBInBound\n65500: DenyAllInBound"]
+        Inbound --> Process --> Default
+    end
+
+    classDef hub fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef spoke1 fill:#27ae60,stroke:#1e8449,color:#fff
+    classDef spoke2 fill:#f1c40f,stroke:#d4ac0f,color:#333
+    classDef nsg fill:#e67e22,stroke:#d35400,color:#fff
+    classDef asg fill:#1abc9c,stroke:#16a085,color:#fff
+
+    class AzBastionSub,GWSub,FWSub,MgmtSub,HubDef,Bastion,VPNGw,FW hub
+    class S1Def,S1App,S1Data,WebVM1,WebVM2,DBVM1 spoke1
+    class S2Def,S2App,AppVM spoke2
+    class HubNSG1,HubNSG2,S1NSG1,S1NSG2,S1NSG3,S2NSG1,S2NSG2,Inbound,Process,Default nsg

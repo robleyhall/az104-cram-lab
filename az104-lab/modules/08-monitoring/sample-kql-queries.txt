@@ -1,0 +1,111 @@
+// ============================================================================
+// AZ-104 KQL Query Reference — Azure Monitor Log Analytics
+// ============================================================================
+// Run these in the Azure Portal: Log Analytics workspace > Logs
+// KQL (Kusto Query Language) is the query language for Azure Monitor Logs.
+// The AZ-104 exam tests your ability to read and construct basic KQL queries.
+// ============================================================================
+
+// --------------------------------------------------------------------------
+// 1. VM Heartbeat Check — Find VMs that stopped sending heartbeats
+// --------------------------------------------------------------------------
+// The Heartbeat table receives a record every minute from each connected agent.
+// Missing heartbeats indicate a downed VM or broken agent.
+Heartbeat
+| summarize LastHeartbeat = max(TimeGenerated) by Computer
+| where LastHeartbeat < ago(5m)
+| order by LastHeartbeat asc
+
+// --------------------------------------------------------------------------
+// 2. VM CPU Usage — Top 10 VMs by average CPU over last hour
+// --------------------------------------------------------------------------
+// The Perf table stores performance counters from VM agents.
+// ObjectName and CounterName identify the metric.
+Perf
+| where ObjectName == "Processor" and CounterName == "% Processor Time"
+| where TimeGenerated > ago(1h)
+| summarize AvgCPU = avg(CounterValue) by Computer
+| top 10 by AvgCPU desc
+
+// --------------------------------------------------------------------------
+// 3. Failed Sign-ins — Last 24 hours
+// --------------------------------------------------------------------------
+// SigninLogs come from Azure AD diagnostic settings.
+// ResultType "0" means success; anything else is a failure.
+SigninLogs
+| where TimeGenerated > ago(24h)
+| where ResultType != "0"
+| summarize FailureCount = count() by UserPrincipalName, ResultDescription
+| order by FailureCount desc
+
+// --------------------------------------------------------------------------
+// 4. Azure Activity — Resource deletions
+// --------------------------------------------------------------------------
+// AzureActivity captures control-plane operations (ARM).
+// Filtering for DELETE operations helps with auditing and compliance.
+AzureActivity
+| where OperationNameValue endswith "DELETE"
+| where ActivityStatusValue == "Success"
+| project TimeGenerated, Caller, ResourceGroup, Resource = tostring(split(ResourceId, "/")[-1])
+| order by TimeGenerated desc
+
+// --------------------------------------------------------------------------
+// 5. Storage Account Operations — Errors
+// --------------------------------------------------------------------------
+// StorageBlobLogs require diagnostic settings on the storage account.
+// Status codes >= 400 indicate client or server errors.
+StorageBlobLogs
+| where StatusCode >= 400
+| summarize ErrorCount = count() by OperationName, StatusCode, StatusText
+| order by ErrorCount desc
+
+// --------------------------------------------------------------------------
+// 6. Network Security Group Flow Events
+// --------------------------------------------------------------------------
+// Requires NSG Flow Logs enabled via Network Watcher.
+// AzureNetworkAnalytics_CL is the traffic analytics table.
+AzureNetworkAnalytics_CL
+| where FlowType_s == "ExternalPublic"
+| summarize TotalFlows = count() by VMIP_s = SrcIP_s, DestIP_s, DestPort_d
+| order by TotalFlows desc
+
+// --------------------------------------------------------------------------
+// 7. Available Memory on VMs
+// --------------------------------------------------------------------------
+// Low available memory can indicate resource pressure.
+// Combine with CPU data to identify under-provisioned VMs.
+Perf
+| where ObjectName == "Memory" and CounterName == "Available MBytes"
+| where TimeGenerated > ago(1h)
+| summarize AvgAvailableMB = avg(CounterValue) by Computer
+| order by AvgAvailableMB asc
+
+// --------------------------------------------------------------------------
+// 8. Backup Job Status — Last 7 days
+// --------------------------------------------------------------------------
+// AddonAzureBackupJobs is populated when the vault sends diagnostics to
+// the workspace. Shows backup, restore, and delete job outcomes.
+AddonAzureBackupJobs
+| where TimeGenerated > ago(7d)
+| summarize count() by JobOperation, JobStatus
+| order by count_ desc
+
+// --------------------------------------------------------------------------
+// 9. Disk I/O — Top VMs by disk writes per second
+// --------------------------------------------------------------------------
+// Useful for identifying storage-bound workloads.
+Perf
+| where ObjectName == "LogicalDisk" and CounterName == "Disk Writes/sec"
+| where TimeGenerated > ago(1h)
+| summarize AvgWritesPerSec = avg(CounterValue) by Computer, InstanceName
+| top 10 by AvgWritesPerSec desc
+
+// --------------------------------------------------------------------------
+// 10. Resource Health Events
+// --------------------------------------------------------------------------
+// AzureActivity with category "ResourceHealth" shows platform-initiated events
+// like VM reboots due to host maintenance.
+AzureActivity
+| where CategoryValue == "ResourceHealth"
+| project TimeGenerated, ResourceGroup, Resource = tostring(split(ResourceId, "/")[-1]), OperationNameValue, ActivityStatusValue
+| order by TimeGenerated desc

@@ -1,0 +1,92 @@
+graph TD
+    Start(["🌐 Incoming Traffic"])
+
+    Start --> Q1{"Global or\nRegional?"}
+
+    Q1 -->|Global| Q2{"Layer 4 or\nLayer 7?"}
+    Q1 -->|Regional| Q3{"Layer 4 or\nLayer 7?"}
+
+    Q2 -->|"L7 · HTTP/S"| FrontDoor
+    Q2 -->|"L4 · TCP/UDP\n(DNS-based)"| TrafficMgr
+    Q3 -->|"L7 · HTTP/S"| AppGW
+    Q3 -->|"L4 · TCP/UDP"| AzLB
+
+    subgraph FD["🌍 Azure Front Door · Global L7"]
+        FrontDoor["Azure Front Door"]
+        FDFeatures["Features:\n• SSL offload\n• WAF\n• URL path routing\n• Caching\n• Session affinity"]
+        FDOrigin1["Origin Group 1\nRegion: East US"]
+        FDOrigin2["Origin Group 2\nRegion: West EU"]
+        FrontDoor --> FDFeatures
+        FrontDoor --> FDOrigin1
+        FrontDoor --> FDOrigin2
+    end
+
+    subgraph TM["🌍 Traffic Manager · Global DNS"]
+        TrafficMgr["Traffic Manager\nDNS-based"]
+        TMRouting["Routing Methods:\n• Priority\n• Weighted\n• Performance\n• Geographic\n• Multivalue\n• Subnet"]
+        TMEp1["Endpoint 1\nEast US · Priority 1"]
+        TMEp2["Endpoint 2\nWest EU · Priority 2"]
+        TrafficMgr --> TMRouting
+        TrafficMgr --> TMEp1
+        TrafficMgr --> TMEp2
+    end
+
+    subgraph AG["📍 Application Gateway · Regional L7"]
+        AppGW["Application Gateway\nv2 SKU"]
+        AGFeatures["Features:\n• SSL termination\n• WAF v2\n• URL path routing\n• Multi-site hosting\n• Autoscaling\n• Cookie affinity"]
+        AGListener["Listeners\nFrontend IP + Port"]
+        AGRule["Routing Rules\nPath-based / Basic"]
+        AGPool["Backend Pool\nVMs / VMSS / App Service / IPs"]
+        AGHealth["Health Probes\nHTTP / HTTPS"]
+        AppGW --> AGFeatures
+        AppGW --> AGListener
+        AGListener --> AGRule
+        AGRule --> AGPool
+        AGPool --> AGHealth
+    end
+
+    subgraph LB["📍 Azure Load Balancer · Regional L4"]
+        AzLB["Azure Load Balancer\nStandard SKU"]
+        LBFeatures["Features:\n• TCP/UDP\n• HA Ports\n• Zone-redundant\n• Outbound rules"]
+        FrontEnd["Frontend IP\nPublic or Internal"]
+        LBRule["Load Balancing Rules\nFloating IP / HA Ports"]
+        BackEnd["Backend Pool\nVMs / VMSS / IPs"]
+        HealthProbe["Health Probes\nTCP / HTTP / HTTPS"]
+        InboundNAT["Inbound NAT Rules\nPort forwarding"]
+        AzLB --> LBFeatures
+        AzLB --> FrontEnd
+        FrontEnd --> LBRule
+        FrontEnd --> InboundNAT
+        LBRule --> BackEnd
+        BackEnd --> HealthProbe
+        InboundNAT --> BackEnd
+    end
+
+    subgraph BackendVMs["🖥️ Backend Resources"]
+        VM1["VM-1\nZone 1"]
+        VM2["VM-2\nZone 2"]
+        VM3["VM-3\nZone 3"]
+        WebApp1["App Service\nWeb App"]
+    end
+
+    AGPool --> VM1
+    AGPool --> VM2
+    AGPool --> WebApp1
+    BackEnd --> VM1
+    BackEnd --> VM2
+    BackEnd --> VM3
+
+    subgraph Compare["📊 Comparison"]
+        direction LR
+        CompTable["Service       | Scope  | Layer | Protocol\n───────────────┼────────┼───────┼──────────\nLoad Balancer  | Region | L4    | TCP/UDP\nApp Gateway    | Region | L7    | HTTP/S\nTraffic Mgr    | Global | DNS   | Any\nFront Door     | Global | L7    | HTTP/S"]
+    end
+
+    classDef global fill:#8e44ad,stroke:#6c3483,color:#fff
+    classDef regional fill:#2980b9,stroke:#1f6da0,color:#fff
+    classDef decision fill:#f39c12,stroke:#d68910,color:#333
+    classDef backend fill:#27ae60,stroke:#1e8449,color:#fff
+
+    class FrontDoor,FDFeatures,FDOrigin1,FDOrigin2,TrafficMgr,TMRouting,TMEp1,TMEp2 global
+    class AppGW,AGFeatures,AGListener,AGRule,AGPool,AGHealth,AzLB,LBFeatures,FrontEnd,LBRule,BackEnd,HealthProbe,InboundNAT regional
+    class Q1,Q2,Q3 decision
+    class VM1,VM2,VM3,WebApp1 backend

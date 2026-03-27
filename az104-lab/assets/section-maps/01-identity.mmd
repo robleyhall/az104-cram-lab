@@ -1,0 +1,75 @@
+graph LR
+    subgraph Tenant["🏢 Entra ID Tenant"]
+        direction TB
+
+        subgraph Users["👤 Users"]
+            Cloud[Cloud User\nCreated in Entra ID]
+            Hybrid[Hybrid User\nSynced via Entra Connect]
+            Guest[Guest User\nB2B Invitation]
+        end
+
+        subgraph Groups["👥 Groups"]
+            subgraph SecGroups["Security Groups"]
+                Assigned[Assigned Membership]
+                DynUser[Dynamic User\nRule-based]
+                DynDevice[Dynamic Device\nRule-based]
+            end
+            M365[Microsoft 365 Group\nCollaboration]
+        end
+
+        subgraph Devices["💻 Devices"]
+            Registered[Entra Registered\nBYOD]
+            Joined[Entra Joined\nCorp-owned]
+            HybridJoined[Hybrid Joined\nAD + Entra]
+        end
+
+        subgraph Apps["📱 Applications"]
+            EntApp[Enterprise Apps]
+            AppReg[App Registrations]
+            SPN[Service Principals]
+            AppReg --> SPN
+        end
+
+        subgraph Roles["🔑 Entra ID Roles"]
+            GA[Global Administrator]
+            UA[User Administrator]
+            GA2[Groups Administrator]
+            CR[Custom Roles\nSpecific permissions]
+            GA -->|highest privilege| UA
+            GA -->|highest privilege| GA2
+        end
+
+        subgraph SSPR["🔄 Self-Service Password Reset"]
+            SSPRStart([User Locked Out])
+            Auth1[Authentication Method 1\nEmail / Phone / App]
+            Auth2[Authentication Method 2\nSecurity Questions]
+            Reset([Password Reset Complete])
+            SSPRStart --> Auth1
+            Auth1 --> Auth2
+            Auth2 --> Reset
+            Reset -.->|writeback| Hybrid
+        end
+    end
+
+    Tenant -->|contains| Users
+    Tenant -->|contains| Groups
+    Tenant -->|contains| Devices
+    Tenant -->|contains| Apps
+
+    Cloud -->|member of| Assigned
+    Hybrid -->|member of| DynUser
+    Guest -->|member of| Assigned
+
+    Roles -->|assigned to| Users
+    Roles -->|assigned to| Groups
+    Roles -->|assigned to| SPN
+
+    classDef userType fill:#3498db,stroke:#2980b9,color:#fff
+    classDef groupType fill:#2ecc71,stroke:#27ae60,color:#fff
+    classDef roleType fill:#e74c3c,stroke:#c0392b,color:#fff
+    classDef flowNode fill:#f39c12,stroke:#d68910,color:#fff
+
+    class Cloud,Hybrid,Guest userType
+    class Assigned,DynUser,DynDevice,M365 groupType
+    class GA,UA,GA2,CR roleType
+    class SSPRStart,Auth1,Auth2,Reset flowNode

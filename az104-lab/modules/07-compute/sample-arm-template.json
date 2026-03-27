@@ -1,0 +1,92 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+
+  "_comment": "============================================================",
+  "_purpose": "Sample ARM template for AZ-104 exam interpretation exercises. The exam frequently shows ARM JSON snippets and asks what they deploy, what values are used, or what would change if a parameter is modified. Practice reading this top-to-bottom.",
+
+  "parameters": {
+    "storageAccountName": {
+      "type": "string",
+      "metadata": {
+        "description": "Base name for the storage account. ARM templates use 'parameters' to accept input values at deployment time — similar to Bicep 'param' declarations."
+      },
+      "minLength": 3,
+      "maxLength": 24
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Azure region. The '[resourceGroup().location]' function returns the location of the target resource group — a very common default in ARM templates."
+      }
+    },
+    "skuName": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Standard_ZRS",
+        "Premium_LRS"
+      ],
+      "metadata": {
+        "description": "Storage redundancy SKU. 'allowedValues' restricts input to this list — the deployment fails if any other value is provided. AZ-104 tests knowledge of storage redundancy options: LRS (3 copies, 1 datacenter), ZRS (3 zones), GRS (6 copies, 2 regions), RA-GRS (GRS + read access to secondary)."
+      }
+    }
+  },
+
+  "variables": {
+    "_comment": "Variables are computed once at deployment time. They cannot be overridden by the caller — only parameters can.",
+    "storageAccountFullName": "[concat(parameters('storageAccountName'), uniqueString(resourceGroup().id))]",
+    "storageAccountFullName_explanation": "concat() joins strings. uniqueString() generates a deterministic 13-char hash from the resource group ID, ensuring global uniqueness. This is identical to Bicep's uniqueString() function."
+  },
+
+  "resources": [
+    {
+      "_comment": "Each resource block has: type, apiVersion, name, location, and resource-specific properties. On the AZ-104 exam, you may be asked to identify the resource type, understand what properties control, or predict what happens if a value changes.",
+      "type": "Microsoft.Storage/storageAccounts",
+      "apiVersion": "2023-05-01",
+      "name": "[variables('storageAccountFullName')]",
+      "location": "[parameters('location')]",
+      "tags": {
+        "Environment": "certlab",
+        "Project": "az104-lab",
+        "DeployedWith": "ARM-Template"
+      },
+      "sku": {
+        "name": "[parameters('skuName')]"
+      },
+      "kind": "StorageV2",
+      "properties": {
+        "_comment": "StorageV2 (general-purpose v2) is the recommended kind for most scenarios. It supports blobs, files, queues, tables, and Data Lake Storage. AZ-104 tests the difference between StorageV1, StorageV2, BlobStorage, and BlockBlobStorage account kinds.",
+        "supportsHttpsTrafficOnly": true,
+        "minimumTlsVersion": "TLS1_2",
+        "allowBlobPublicAccess": false,
+        "accessTier": "Hot",
+        "networkAcls": {
+          "defaultAction": "Allow",
+          "bypass": "AzureServices"
+        }
+      }
+    }
+  ],
+
+  "outputs": {
+    "storageEndpoint": {
+      "type": "string",
+      "value": "[reference(variables('storageAccountFullName')).primaryEndpoints.blob]",
+      "metadata": {
+        "description": "The primary blob endpoint URL. The reference() function retrieves runtime properties of a deployed resource. In Bicep, this is simply 'storageAccount.properties.primaryEndpoints.blob'."
+      }
+    },
+    "storageAccountId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.Storage/storageAccounts', variables('storageAccountFullName'))]",
+      "metadata": {
+        "description": "Full resource ID. resourceId() constructs the ID from the resource type and name. AZ-104 may ask you to construct or interpret resource IDs."
+      }
+    }
+  }
+}

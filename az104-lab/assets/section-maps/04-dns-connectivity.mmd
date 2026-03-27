@@ -1,0 +1,103 @@
+graph TD
+    subgraph PublicDNS["🌍 Public DNS Zone · contoso.com"]
+        PubZone["Public DNS Zone"]
+        ARecord["A Record\nwww → 20.1.2.3"]
+        CNAME["CNAME Record\napi → myapp.azurewebsites.net"]
+        MX["MX Record\nmail → mail.contoso.com"]
+        PubZone --> ARecord
+        PubZone --> CNAME
+        PubZone --> MX
+    end
+
+    subgraph PrivateDNS["🔒 Private DNS Zone · contoso.internal"]
+        PrivZone["Private DNS Zone"]
+        AutoReg["Auto-Registration\nVMs register A records\nautomatically"]
+        PrivA1["A Record\nweb-vm → 10.1.1.4"]
+        PrivA2["A Record\ndb-vm → 10.1.2.4"]
+        PrivZone --> AutoReg
+        PrivZone --> PrivA1
+        PrivZone --> PrivA2
+    end
+
+    Internet((Internet))
+    Internet -->|"DNS query:\nwww.contoso.com"| PubZone
+    PubZone -->|"resolves to\npublic IP"| Internet
+
+    subgraph VNets["Azure Virtual Networks"]
+        subgraph HubVNet["Hub VNet"]
+            Bastion["Azure Bastion"]
+            FWNVA["Firewall / NVA\n10.0.3.4"]
+        end
+
+        subgraph Spoke1VNet["Spoke1 VNet"]
+            WebVM["web-vm\n10.1.1.4"]
+            DBVM["db-vm\n10.1.2.4"]
+        end
+
+        subgraph Spoke2VNet["Spoke2 VNet"]
+            AppVM["app-vm\n10.2.1.4"]
+        end
+    end
+
+    PrivZone -.->|"VNet Link\n(registration enabled)"| Spoke1VNet
+    PrivZone -.->|"VNet Link\n(resolution only)"| Spoke2VNet
+
+    subgraph UDR["🔀 User-Defined Routes"]
+        direction LR
+        RT["Route Table\nspoke1-rt"]
+        Route1["Route: 0.0.0.0/0\nNext Hop: Virtual Appliance\n10.0.3.4"]
+        Route2["Route: 10.2.0.0/16\nNext Hop: Virtual Appliance\n10.0.3.4"]
+        RT --> Route1
+        RT --> Route2
+    end
+
+    RT -.->|"associated to\nSpoke1 subnets"| Spoke1VNet
+    Route1 -->|"traffic forced\nthrough firewall"| FWNVA
+    FWNVA -->|"inspected traffic\nto internet"| Internet
+
+    subgraph Endpoints["🔗 Service Endpoints vs Private Endpoints"]
+        direction TB
+
+        subgraph SE["Service Endpoint"]
+            SEDesc["Extends VNet identity\nto Azure service"]
+            SERoute["Optimized route\nover Azure backbone"]
+            SEAccess["Access via public IP\nbut from VNet only"]
+            SEDesc --> SERoute --> SEAccess
+        end
+
+        subgraph PE["Private Endpoint"]
+            PEDesc["Private IP in your VNet\nfor Azure service"]
+            PENIC["NIC with private IP\ne.g. 10.1.2.10"]
+            PEDns["Private DNS Zone\nfor name resolution"]
+            PEDesc --> PENIC --> PEDns
+        end
+    end
+
+    subgraph BastionFlow["🛡️ Bastion Connectivity"]
+        direction LR
+        User["Admin User\nBrowser: Azure Portal"]
+        BastionGW["Azure Bastion\nTLS 443"]
+        TargetVM["Target VM\nNo public IP needed"]
+        User -->|"HTTPS\nport 443"| BastionGW
+        BastionGW -->|"RDP 3389 or\nSSH 22\n(private IP)"| TargetVM
+    end
+
+    Bastion --> WebVM
+    Bastion --> DBVM
+    Bastion --> AppVM
+
+    StorageAcct["Storage Account\nmystorage.blob.core.windows.net"]
+    SE -.->|"subnet → service"| StorageAcct
+    PE -.->|"private IP\nin VNet"| StorageAcct
+
+    classDef publicDns fill:#3498db,stroke:#2980b9,color:#fff
+    classDef privateDns fill:#2ecc71,stroke:#27ae60,color:#fff
+    classDef udr fill:#e67e22,stroke:#d35400,color:#fff
+    classDef endpoint fill:#9b59b6,stroke:#7d3c98,color:#fff
+    classDef bastion fill:#1abc9c,stroke:#16a085,color:#fff
+
+    class PubZone,ARecord,CNAME,MX publicDns
+    class PrivZone,AutoReg,PrivA1,PrivA2 privateDns
+    class RT,Route1,Route2 udr
+    class SEDesc,SERoute,SEAccess,PEDesc,PENIC,PEDns endpoint
+    class User,BastionGW,TargetVM,Bastion bastion

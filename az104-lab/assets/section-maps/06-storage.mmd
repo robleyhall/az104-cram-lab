@@ -1,0 +1,98 @@
+graph TD
+    subgraph SA["📦 Storage Account · mystorageacct"]
+        SAProps["Properties:\n• Performance: Standard / Premium\n• Kind: StorageV2\n• Replication: see below"]
+
+        subgraph BlobSvc["🗂️ Blob Service"]
+            BlobSvcNode["Blob Service"]
+            Container1["Container: images\nAccess: Private"]
+            Container2["Container: public\nAccess: Blob"]
+            BlobSvcNode --> Container1
+            BlobSvcNode --> Container2
+
+            subgraph BlobTypes["Blob Types"]
+                Block["Block Blob\nFiles, images, videos"]
+                Append["Append Blob\nLog files"]
+                Page["Page Blob\nVHD disks"]
+            end
+
+            Container1 --> Block
+            Container1 --> Append
+            Container2 --> Block
+        end
+
+        subgraph FileSvc["📁 File Service"]
+            FileSvcNode["Azure Files"]
+            Share1["File Share: data\nQuota: 100 GiB"]
+            SMB["SMB 3.0 / NFS"]
+            AzFileSync["Azure File Sync\nHybrid cloud"]
+            FileSvcNode --> Share1
+            Share1 --> SMB
+            Share1 --> AzFileSync
+        end
+
+        subgraph QueueSvc["📨 Queue Service"]
+            QueueNode["Queue Service"]
+            Queue1["Queue: messages\n64 KB max per msg"]
+            QueueNode --> Queue1
+        end
+
+        subgraph TableSvc["📊 Table Service"]
+            TableNode["Table Service"]
+            Table1["Table: logs\nNoSQL key-value"]
+            TableNode --> Table1
+        end
+    end
+
+    subgraph Tiers["🌡️ Blob Access Tiers"]
+        direction LR
+        Hot["Hot 🔥\nFrequent access\nHighest storage cost\nLowest access cost"]
+        Cool["Cool ❄️\n30-day min\nLower storage cost\nHigher access cost"]
+        Cold["Cold 🧊\n90-day min\nLower storage cost\nHigher access cost"]
+        Archive["Archive 🗄️\n180-day min\nLowest storage cost\nHighest access cost\nOffline · Rehydrate needed"]
+        Hot --> Cool --> Cold --> Archive
+    end
+
+    subgraph Lifecycle["♻️ Lifecycle Management"]
+        direction LR
+        Rule["Lifecycle Rule"]
+        Condition["If: Last modified\n> 30 days ago"]
+        ActionTier["Then: Move to\nCool tier"]
+        ActionDelete["Or: Delete blob\nafter 365 days"]
+        Rule --> Condition
+        Condition --> ActionTier
+        Condition --> ActionDelete
+    end
+
+    subgraph Access["🔑 Access Methods"]
+        direction TB
+        Keys["Storage Account Keys\n• Full access\n• 2 keys for rotation\n⚠️ Avoid in production"]
+        SAS["Shared Access Signature\n• Delegated access\n• Time-limited\n• IP restricted\n• Types: Account, Service, User Delegation"]
+        EntraRBAC["Entra ID + RBAC\n• Storage Blob Data Reader\n• Storage Blob Data Contributor\n• Storage Blob Data Owner\n✅ Recommended"]
+        AnonAccess["Anonymous Access\n• Container-level\n• Blob-level\n⚠️ Use with caution"]
+    end
+
+    subgraph Redundancy["💾 Redundancy Options"]
+        direction LR
+        LRS["LRS\n3 copies\n1 datacenter"]
+        ZRS["ZRS\n3 copies\n3 zones"]
+        GRS["GRS\n6 copies\n2 regions\nSecondary: not readable"]
+        RAGRS["RA-GRS\n6 copies\n2 regions\nSecondary: readable"]
+        GZRS["GZRS\nZRS primary +\nLRS secondary region"]
+        RAGZRS["RA-GZRS\nZRS primary +\nreadable secondary"]
+        LRS --> ZRS --> GRS --> RAGRS
+        GRS --> GZRS --> RAGZRS
+    end
+
+    SA --> Access
+    BlobSvc --> Tiers
+    BlobSvc --> Lifecycle
+
+    classDef storage fill:#2980b9,stroke:#1f6da0,color:#fff
+    classDef tier fill:#e67e22,stroke:#d35400,color:#fff
+    classDef access fill:#27ae60,stroke:#1e8449,color:#fff
+    classDef redundancy fill:#8e44ad,stroke:#6c3483,color:#fff
+
+    class BlobSvcNode,FileSvcNode,QueueNode,TableNode,Container1,Container2,Block,Append,Page,Share1 storage
+    class Hot,Cool,Cold,Archive tier
+    class Keys,SAS,EntraRBAC,AnonAccess access
+    class LRS,ZRS,GRS,RAGRS,GZRS,RAGZRS redundancy

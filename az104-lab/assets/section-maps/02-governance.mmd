@@ -1,0 +1,93 @@
+graph TD
+    subgraph Hierarchy["🏛️ Azure Resource Hierarchy"]
+        RootMG[Root Management Group]
+        MG1[Management Group\nProduction]
+        MG2[Management Group\nDev/Test]
+        Sub1[Subscription\nProd-001]
+        Sub2[Subscription\nDev-001]
+        RG1[Resource Group\nrg-network-prod]
+        RG2[Resource Group\nrg-app-prod]
+        RG3[Resource Group\nrg-dev]
+        Res1[Resources\nVNets, NSGs]
+        Res2[Resources\nVMs, Storage]
+        Res3[Resources\nVMs, Apps]
+
+        RootMG --> MG1
+        RootMG --> MG2
+        MG1 --> Sub1
+        MG2 --> Sub2
+        Sub1 --> RG1
+        Sub1 --> RG2
+        Sub2 --> RG3
+        RG1 --> Res1
+        RG2 --> Res2
+        RG3 --> Res3
+    end
+
+    subgraph Policy["📜 Azure Policy"]
+        direction LR
+        PolicyDef[Policy Definition\nJSON rule + effect]
+        Initiative[Initiative\nPolicy Set]
+        PolicyAssign[Policy Assignment\nScope + Parameters]
+        Eval[Evaluation\nCompliant / Non-Compliant]
+        Remediate[Remediation Task\nDeployIfNotExists\nModify]
+
+        PolicyDef --> Initiative
+        Initiative --> PolicyAssign
+        PolicyDef --> PolicyAssign
+        PolicyAssign --> Eval
+        Eval -->|non-compliant| Remediate
+    end
+
+    subgraph RBAC["🔐 Role-Based Access Control"]
+        direction LR
+        RoleDef[Role Definition\nActions + NotActions\nDataActions]
+        BuiltIn[Built-in Roles\nOwner · Contributor\nReader · User Access Admin]
+        CustomRole[Custom Role\nTailored permissions]
+        Principal[Security Principal\nUser · Group\nService Principal\nManaged Identity]
+        Scope[Scope\nMG · Sub · RG · Resource]
+        Assignment[Role Assignment\nPrincipal + Role + Scope]
+
+        RoleDef --> BuiltIn
+        RoleDef --> CustomRole
+        BuiltIn --> Assignment
+        CustomRole --> Assignment
+        Principal --> Assignment
+        Scope --> Assignment
+    end
+
+    subgraph Locks["🔒 Resource Locks"]
+        direction LR
+        LockTypes{Lock Type?}
+        CanNotDelete[CanNotDelete\nRead ✅ Modify ✅ Delete ❌]
+        ReadOnly[ReadOnly\nRead ✅ Modify ❌ Delete ❌]
+        LockTypes --> CanNotDelete
+        LockTypes --> ReadOnly
+    end
+
+    subgraph Tags["🏷️ Tags"]
+        direction LR
+        TagDef[Tag: Key = Value\ne.g. Environment = Prod]
+        TagPolicy[Policy: Require Tag\non Resource Groups]
+        TagInherit[Note: Tags do NOT\ninherit automatically]
+        TagCopy[Policy Effect: Modify\nCopy tags from RG]
+        TagDef --> TagPolicy
+        TagPolicy --> TagInherit
+        TagInherit -->|use policy to| TagCopy
+    end
+
+    PolicyAssign -.->|assigned at| Hierarchy
+    Assignment -.->|scoped to| Hierarchy
+    LockTypes -.->|applied to| Hierarchy
+
+    classDef hierarchy fill:#2c3e50,stroke:#1a252f,color:#fff
+    classDef policy fill:#8e44ad,stroke:#6c3483,color:#fff
+    classDef rbac fill:#2980b9,stroke:#1f6da0,color:#fff
+    classDef lock fill:#e74c3c,stroke:#c0392b,color:#fff
+    classDef tag fill:#f39c12,stroke:#d68910,color:#fff
+
+    class RootMG,MG1,MG2,Sub1,Sub2,RG1,RG2,RG3,Res1,Res2,Res3 hierarchy
+    class PolicyDef,Initiative,PolicyAssign,Eval,Remediate policy
+    class RoleDef,BuiltIn,CustomRole,Principal,Scope,Assignment rbac
+    class LockTypes,CanNotDelete,ReadOnly lock
+    class TagDef,TagPolicy,TagInherit,TagCopy tag

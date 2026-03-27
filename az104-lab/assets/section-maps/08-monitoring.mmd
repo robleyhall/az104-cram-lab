@@ -1,0 +1,142 @@
+graph TD
+    subgraph Sources["📡 Data Sources"]
+        VMs["Virtual Machines\nGuest OS + Host"]
+        StorageSrc["Storage Accounts"]
+        NetworkSrc["Network Resources\nNSGs, LBs, VNets"]
+        AppSrc["Applications\nApp Service, Functions"]
+        SubSrc["Subscription\nActivity Log"]
+    end
+
+    subgraph AzureMonitor["📊 Azure Monitor"]
+        subgraph Metrics["📈 Metrics"]
+            MetricDB["Metrics Database\nNumeric time-series"]
+            MetricExplorer["Metrics Explorer\nCharts & visualization"]
+            MetricProps["Properties:\n• Near real-time\n• 93-day retention\n• Platform + Custom"]
+            MetricDB --> MetricExplorer
+            MetricDB --> MetricProps
+        end
+
+        subgraph Logs["📋 Logs"]
+            LAW["Log Analytics Workspace"]
+            KQL["Kusto Query Language\nKQL"]
+            LogTypes["Log Types:\n• Activity Logs\n• Resource Logs\n• Guest OS Logs\n• Application Logs"]
+            LAW --> KQL
+            LAW --> LogTypes
+        end
+    end
+
+    VMs -->|"Azure Monitor Agent\n(AMA)"| LAW
+    VMs -->|host metrics| MetricDB
+    StorageSrc -->|diagnostic settings| LAW
+    StorageSrc -->|metrics| MetricDB
+    NetworkSrc -->|diagnostic settings| LAW
+    NetworkSrc -->|metrics| MetricDB
+    AppSrc -->|diagnostic settings| LAW
+    AppSrc -->|metrics| MetricDB
+    SubSrc -->|activity log| LAW
+
+    subgraph DiagSettings["⚙️ Diagnostic Settings"]
+        DS["Diagnostic Setting"]
+        DSTarget1["→ Log Analytics Workspace"]
+        DSTarget2["→ Storage Account\nArchival"]
+        DSTarget3["→ Event Hub\nStreaming"]
+        DS --> DSTarget1
+        DS --> DSTarget2
+        DS --> DSTarget3
+    end
+
+    subgraph Alerts["🔔 Alerts"]
+        subgraph AlertTypes["Alert Types"]
+            MetricAlert["Metric Alert\nThreshold or dynamic\ne.g. CPU > 80%"]
+            LogAlert["Log Search Alert\nKQL query result\ne.g. Error count > 10"]
+            ActivityAlert["Activity Log Alert\nAzure operations\ne.g. VM deallocated"]
+        end
+
+        AlertRule["Alert Rule\nCondition + Severity\n0=Critical → 4=Verbose"]
+        ActionGroup["Action Group"]
+
+        subgraph Actions["Notification Actions"]
+            Email["📧 Email"]
+            SMS["📱 SMS"]
+            Webhook["🔗 Webhook"]
+            AzFunc["⚡ Azure Function"]
+            LogicApp["🔄 Logic App"]
+            ITSM["🎫 ITSM Connector"]
+        end
+
+        MetricAlert --> AlertRule
+        LogAlert --> AlertRule
+        ActivityAlert --> AlertRule
+        AlertRule --> ActionGroup
+        ActionGroup --> Email
+        ActionGroup --> SMS
+        ActionGroup --> Webhook
+        ActionGroup --> AzFunc
+        ActionGroup --> LogicApp
+        ActionGroup --> ITSM
+    end
+
+    MetricDB --> MetricAlert
+    LAW --> LogAlert
+    SubSrc --> ActivityAlert
+
+    subgraph Backup["💾 Azure Backup"]
+        RSV["Recovery Services Vault"]
+        BackupPolicy["Backup Policy\n• Schedule: Daily/Weekly\n• Retention: days/weeks/months/years\n• Tier: Snapshot → Standard → Archive"]
+
+        subgraph ProtectedItems["Protected Items"]
+            VMBackup["Azure VM Backup\nFull VM snapshot"]
+            FileBackup["Azure Files Backup\nShare snapshot"]
+            SQLBackup["SQL in VM Backup\nStream-based"]
+            BlobBackup["Blob Backup\nOperational + Vaulted"]
+        end
+
+        RSV --> BackupPolicy
+        BackupPolicy --> VMBackup
+        BackupPolicy --> FileBackup
+        BackupPolicy --> SQLBackup
+        BackupPolicy --> BlobBackup
+
+        subgraph RestoreOps["Restore Operations"]
+            RestoreVM["Restore VM\n• Create new VM\n• Replace existing\n• Restore disks"]
+            RestoreFile["File Recovery\nMount recovery point\nas drive"]
+        end
+
+        VMBackup --> RestoreVM
+        FileBackup --> RestoreFile
+    end
+
+    subgraph NetWatch["🔍 Network Watcher"]
+        NWNode["Network Watcher"]
+
+        ConnMon["Connection Monitor\nEnd-to-end connectivity\nLatency tracking"]
+        NSGFlow["NSG Flow Logs\nTraffic analytics\nAllowed/Denied flows"]
+        IPFlow["IP Flow Verify\nTest: Will packet\nbe allowed or denied?"]
+        NextHop["Next Hop\nDetermine routing\npath for packet"]
+        Topology["Network Topology\nVisual diagram of\nVNet resources"]
+        PacketCap["Packet Capture\nCapture traffic on VM\nfor analysis"]
+
+        NWNode --> ConnMon
+        NWNode --> NSGFlow
+        NWNode --> IPFlow
+        NWNode --> NextHop
+        NWNode --> Topology
+        NWNode --> PacketCap
+    end
+
+    NSGFlow -.->|"flow data"| LAW
+    ConnMon -.->|"monitoring data"| LAW
+
+    classDef source fill:#3498db,stroke:#2980b9,color:#fff
+    classDef metric fill:#e67e22,stroke:#d35400,color:#fff
+    classDef log fill:#2ecc71,stroke:#27ae60,color:#fff
+    classDef alert fill:#e74c3c,stroke:#c0392b,color:#fff
+    classDef backup fill:#8e44ad,stroke:#6c3483,color:#fff
+    classDef netwatch fill:#1abc9c,stroke:#16a085,color:#fff
+
+    class VMs,StorageSrc,NetworkSrc,AppSrc,SubSrc source
+    class MetricDB,MetricExplorer,MetricProps metric
+    class LAW,KQL,LogTypes,DS,DSTarget1,DSTarget2,DSTarget3 log
+    class MetricAlert,LogAlert,ActivityAlert,AlertRule,ActionGroup,Email,SMS,Webhook,AzFunc,LogicApp,ITSM alert
+    class RSV,BackupPolicy,VMBackup,FileBackup,SQLBackup,BlobBackup,RestoreVM,RestoreFile backup
+    class NWNode,ConnMon,NSGFlow,IPFlow,NextHop,Topology,PacketCap netwatch

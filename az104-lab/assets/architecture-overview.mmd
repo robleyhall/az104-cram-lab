@@ -1,0 +1,104 @@
+graph TD
+    Internet((Internet))
+
+    subgraph Azure["☁️ Azure Subscription"]
+        subgraph Monitor["📊 Module: Monitoring"]
+            LAW[Log Analytics Workspace]
+            AzMon[Azure Monitor]
+            AzMon --> LAW
+        end
+
+        subgraph Hub["🔷 Hub VNet · 10.0.0.0/16"]
+            subgraph HubSubnets["Hub Subnets"]
+                BastionSub[AzureBastionSubnet\n10.0.1.0/26]
+                GWSub[GatewaySubnet\n10.0.2.0/27]
+                FWSub[AzureFirewallSubnet\n10.0.3.0/26]
+                MgmtSub[Management Subnet\n10.0.4.0/24]
+                HubDefault[Default Subnet\n10.0.0.0/24]
+            end
+            Bastion[Azure Bastion]
+            Firewall[Azure Firewall / NVA]
+            BastionSub --> Bastion
+            FWSub --> Firewall
+        end
+
+        subgraph Spoke1["🟢 Spoke1 VNet · 10.1.0.0/16"]
+            subgraph S1Subnets["Spoke1 Subnets"]
+                S1Default[Default Subnet\n10.1.0.0/24]
+                S1App[App Subnet\n10.1.1.0/24]
+                S1Data[Data Subnet\n10.1.2.0/24]
+            end
+            VM1[Linux VM]
+            VM2[Windows VM]
+            S1Default --> VM1
+            S1App --> VM2
+            NSG1[NSG: spoke1-default-nsg]
+            NSG2[NSG: spoke1-app-nsg]
+            NSG1 -.->|attached| S1Default
+            NSG2 -.->|attached| S1App
+        end
+
+        subgraph Spoke2["🟡 Spoke2 VNet · 10.2.0.0/16"]
+            subgraph S2Subnets["Spoke2 Subnets"]
+                S2Default[Default Subnet\n10.2.0.0/24]
+                S2App[App Subnet\n10.2.1.0/24]
+            end
+            VM3[Web VM]
+            S2Default --> VM3
+            NSG3[NSG: spoke2-default-nsg]
+            NSG3 -.->|attached| S2Default
+        end
+
+        subgraph LB["⚖️ Module: Load Balancing"]
+            ALB[Azure Load Balancer\nStandard · L4]
+            AppGW[Application Gateway\nL7]
+        end
+
+        subgraph DNS["🌐 Module: DNS"]
+            PubDNS[Public DNS Zone]
+            PriDNS[Private DNS Zone]
+        end
+
+        subgraph Storage["📦 Module: Storage"]
+            SA[Storage Account]
+        end
+    end
+
+    Internet -->|Public IP| ALB
+    Internet -->|DNS queries| PubDNS
+    Internet -->|RDP/SSH via Bastion| Bastion
+
+    Hub <-->|VNet Peering| Spoke1
+    Hub <-->|VNet Peering| Spoke2
+
+    ALB --> VM1
+    ALB --> VM2
+    AppGW --> VM3
+
+    Bastion -->|secure connect| VM1
+    Bastion -->|secure connect| VM2
+    Bastion -->|secure connect| VM3
+
+    PriDNS -.->|auto-registration| Spoke1
+    PriDNS -.->|auto-registration| Spoke2
+
+    Firewall -->|forced tunneling| Internet
+
+    VM1 -.->|diagnostics| LAW
+    VM2 -.->|diagnostics| LAW
+    VM3 -.->|diagnostics| LAW
+    SA -.->|diagnostics| LAW
+    ALB -.->|diagnostics| LAW
+    Firewall -.->|diagnostics| LAW
+
+    classDef hub fill:#4a90d9,stroke:#2c5f8a,color:#fff
+    classDef spoke1 fill:#27ae60,stroke:#1e8449,color:#fff
+    classDef spoke2 fill:#f1c40f,stroke:#d4ac0f,color:#333
+    classDef monitor fill:#8e44ad,stroke:#6c3483,color:#fff
+    classDef external fill:#e74c3c,stroke:#c0392b,color:#fff
+
+    class Bastion,Firewall,BastionSub,GWSub,FWSub,MgmtSub,HubDefault hub
+    class VM1,VM2,S1Default,S1App,S1Data,NSG1,NSG2 spoke1
+    class VM3,S2Default,S2App,NSG3 spoke2
+    class LAW,AzMon monitor
+    class Internet external
