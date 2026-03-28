@@ -17,8 +17,8 @@
 - At least one VM deployed (from Module 07, or create one here)
 
 ```bash
-az group create --name rg-certlab-monitoring --location eastus \
-  --tags Environment=certlab Module=monitoring
+az group create --name rg-az104-lab-monitoring --location eastus \
+  --tags Environment=az104-lab Module=monitoring
 ```
 
 ---
@@ -39,18 +39,18 @@ az group create --name rg-certlab-monitoring --location eastus \
 1. Create a Log Analytics workspace:
    ```bash
    az monitor log-analytics workspace create \
-     --workspace-name law-certlab \
-     --resource-group rg-certlab-monitoring \
+     --workspace-name law-az104-lab \
+     --resource-group rg-az104-lab-monitoring \
      --location eastus \
      --retention-time 30 \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Get the workspace ID (for future queries):
    ```bash
    LAW_ID=$(az monitor log-analytics workspace show \
-     --workspace-name law-certlab \
-     --resource-group rg-certlab-monitoring \
+     --workspace-name law-az104-lab \
+     --resource-group rg-az104-lab-monitoring \
      --query customerId -o tsv)
    echo "Workspace ID: $LAW_ID"
    ```
@@ -156,18 +156,18 @@ az group create --name rg-certlab-monitoring --location eastus \
 1. Create an action group:
    ```bash
    az monitor action-group create \
-     --name ag-certlab-ops \
-     --resource-group rg-certlab-monitoring \
+     --name ag-az104-lab-ops \
+     --resource-group rg-az104-lab-monitoring \
      --short-name CertLabOps \
      --action email ops-email admin@yourdomain.com \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Verify the action group:
    ```bash
    az monitor action-group show \
-     --name ag-certlab-ops \
-     --resource-group rg-certlab-monitoring \
+     --name ag-az104-lab-ops \
+     --resource-group rg-az104-lab-monitoring \
      --query "{name:name, shortName:groupShortName, receivers:emailReceivers[].{name:name, email:emailAddress}}" \
      --output json
    ```
@@ -176,39 +176,39 @@ az group create --name rg-certlab-monitoring --location eastus \
    ```bash
    az monitor metrics alert create \
      --name "alert-high-cpu" \
-     --resource-group rg-certlab-monitoring \
-     --scopes "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-certlab-monitoring" \
+     --resource-group rg-az104-lab-monitoring \
+     --scopes "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-az104-lab-monitoring" \
      --condition "avg Percentage CPU > 80" \
      --window-size 5m \
      --evaluation-frequency 1m \
      --severity 2 \
-     --action ag-certlab-ops \
+     --action ag-az104-lab-ops \
      --description "Alert when average CPU exceeds 80% for 5 minutes" \
      --target-resource-type "Microsoft.Compute/virtualMachines" \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 4. Create an activity log alert (for resource deletions):
    ```bash
    az monitor activity-log alert create \
      --name "alert-resource-delete" \
-     --resource-group rg-certlab-monitoring \
-     --action-group ag-certlab-ops \
+     --resource-group rg-az104-lab-monitoring \
+     --action-group ag-az104-lab-ops \
      --condition category=Administrative operationName="Microsoft.Resources/subscriptions/resourceGroups/delete/action" \
      --description "Alert when a resource group is deleted" \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 5. List all alerts:
    ```bash
    echo "=== Metric Alerts ==="
    az monitor metrics alert list \
-     --resource-group rg-certlab-monitoring \
+     --resource-group rg-az104-lab-monitoring \
      --query "[].{name:name, severity:severity, enabled:enabled}" -o table
 
    echo "=== Activity Log Alerts ==="
    az monitor activity-log alert list \
-     --resource-group rg-certlab-monitoring \
+     --resource-group rg-az104-lab-monitoring \
      --query "[].{name:name, enabled:enabled}" -o table
    ```
 
@@ -251,18 +251,18 @@ az group create --name rg-certlab-monitoring --location eastus \
    MONITOR_STORAGE="stmon$(date +%s | tail -c 9)"
    az storage account create \
      --name "$MONITOR_STORAGE" \
-     --resource-group rg-certlab-monitoring \
+     --resource-group rg-az104-lab-monitoring \
      --sku Standard_LRS \
      --location eastus \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Enable diagnostic settings for the storage account:
    ```bash
    STORAGE_ID=$(az storage account show --name "$MONITOR_STORAGE" \
-     --resource-group rg-certlab-monitoring --query id -o tsv)
+     --resource-group rg-az104-lab-monitoring --query id -o tsv)
    LAW_RESOURCE_ID=$(az monitor log-analytics workspace show \
-     --workspace-name law-certlab --resource-group rg-certlab-monitoring \
+     --workspace-name law-az104-lab --resource-group rg-az104-lab-monitoring \
      --query id -o tsv)
 
    az monitor diagnostic-settings create \
@@ -292,7 +292,7 @@ az group create --name rg-certlab-monitoring --location eastus \
 5. Enable VM diagnostics (if a VM exists):
    ```bash
    # If you have a VM from Module 07, enable diagnostics
-   VM_ID=$(az vm show --name vm-web-01 --resource-group rg-certlab-compute \
+   VM_ID=$(az vm show --name vm-web-01 --resource-group rg-az104-lab-compute \
      --query id -o tsv 2>/dev/null)
 
    if [ -n "$VM_ID" ]; then
@@ -348,11 +348,11 @@ az group create --name rg-certlab-monitoring --location eastus \
 3. Use IP Flow Verify to test if traffic is allowed (requires a VM):
    ```bash
    # Test if SSH (port 22) is allowed to a VM
-   VM_ID=$(az vm show --name vm-web-01 --resource-group rg-certlab-compute \
+   VM_ID=$(az vm show --name vm-web-01 --resource-group rg-az104-lab-compute \
      --query id -o tsv 2>/dev/null)
 
    if [ -n "$VM_ID" ]; then
-     NIC_ID=$(az vm show --name vm-web-01 --resource-group rg-certlab-compute \
+     NIC_ID=$(az vm show --name vm-web-01 --resource-group rg-az104-lab-compute \
        --query "networkProfile.networkInterfaces[0].id" -o tsv)
      VM_IP=$(az network nic show --ids "$NIC_ID" \
        --query "ipConfigurations[0].privateIpAddress" -o tsv)
@@ -435,25 +435,25 @@ az group create --name rg-certlab-monitoring --location eastus \
 1. Create a Recovery Services vault:
    ```bash
    az backup vault create \
-     --name rsv-certlab \
-     --resource-group rg-certlab-monitoring \
+     --name rsv-az104-lab \
+     --resource-group rg-az104-lab-monitoring \
      --location eastus \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. View the default backup policy:
    ```bash
    az backup policy list \
-     --vault-name rsv-certlab \
-     --resource-group rg-certlab-monitoring \
+     --vault-name rsv-az104-lab \
+     --resource-group rg-az104-lab-monitoring \
      --query "[].{name:name, type:properties.backupManagementType}" -o table
    ```
 
 3. Create a custom backup policy:
    ```bash
    az backup policy set \
-     --vault-name rsv-certlab \
-     --resource-group rg-certlab-monitoring \
+     --vault-name rsv-az104-lab \
+     --resource-group rg-az104-lab-monitoring \
      --name "policy-daily-30d" \
      --policy '{
        "schedulePolicy": {
@@ -478,27 +478,27 @@ az group create --name rg-certlab-monitoring --location eastus \
 
 4. Enable backup for a VM (if one exists):
    ```bash
-   VM_EXISTS=$(az vm show --name vm-web-01 --resource-group rg-certlab-compute --query id -o tsv 2>/dev/null)
+   VM_EXISTS=$(az vm show --name vm-web-01 --resource-group rg-az104-lab-compute --query id -o tsv 2>/dev/null)
 
    if [ -n "$VM_EXISTS" ]; then
      az backup protection enable-for-vm \
-       --vault-name rsv-certlab \
-       --resource-group rg-certlab-monitoring \
+       --vault-name rsv-az104-lab \
+       --resource-group rg-az104-lab-monitoring \
        --vm vm-web-01 \
        --policy-name DefaultPolicy
      echo "✅ Backup enabled for vm-web-01"
    else
      echo "ℹ️ No VM found to protect. Deploy one from Module 07 first."
      echo "Command to enable backup:"
-     echo "  az backup protection enable-for-vm --vault-name rsv-certlab --resource-group rg-certlab-monitoring --vm <vm-name> --policy-name DefaultPolicy"
+     echo "  az backup protection enable-for-vm --vault-name rsv-az104-lab --resource-group rg-az104-lab-monitoring --vm <vm-name> --policy-name DefaultPolicy"
    fi
    ```
 
 5. Check backup status:
    ```bash
    az backup item list \
-     --vault-name rsv-certlab \
-     --resource-group rg-certlab-monitoring \
+     --vault-name rsv-az104-lab \
+     --resource-group rg-az104-lab-monitoring \
      --query "[].{name:name, status:properties.protectionState, lastBackup:properties.lastBackupTime}" \
      --output table 2>/dev/null || echo "ℹ️ No backup items configured yet"
    ```
@@ -507,10 +507,10 @@ az group create --name rg-certlab-monitoring --location eastus \
    ```bash
    if [ -n "$VM_EXISTS" ]; then
      az backup protection backup-now \
-       --vault-name rsv-certlab \
-       --resource-group rg-certlab-monitoring \
-       --container-name "$(az backup container list --vault-name rsv-certlab --resource-group rg-certlab-monitoring --backup-management-type AzureIaasVM --query '[0].name' -o tsv 2>/dev/null)" \
-       --item-name "$(az backup item list --vault-name rsv-certlab --resource-group rg-certlab-monitoring --query '[0].name' -o tsv 2>/dev/null)" \
+       --vault-name rsv-az104-lab \
+       --resource-group rg-az104-lab-monitoring \
+       --container-name "$(az backup container list --vault-name rsv-az104-lab --resource-group rg-az104-lab-monitoring --backup-management-type AzureIaasVM --query '[0].name' -o tsv 2>/dev/null)" \
+       --item-name "$(az backup item list --vault-name rsv-az104-lab --resource-group rg-az104-lab-monitoring --query '[0].name' -o tsv 2>/dev/null)" \
        --retain-until "$(date -u -v+30d +%d-%m-%Y 2>/dev/null || date -u -d '+30 days' +%d-%m-%Y)" 2>/dev/null \
        && echo "✅ On-demand backup triggered" \
        || echo "ℹ️ On-demand backup requires an active protected item"
@@ -545,8 +545,8 @@ az group create --name rg-certlab-monitoring --location eastus \
 1. Create a shared dashboard via CLI:
    ```bash
    az portal dashboard create \
-     --name "dashboard-certlab-ops" \
-     --resource-group rg-certlab-monitoring \
+     --name "dashboard-az104-lab-ops" \
+     --resource-group rg-az104-lab-monitoring \
      --input-path /dev/stdin << 'EOF'
    {
      "lenses": {
@@ -722,15 +722,15 @@ Implement the core components:
 ```bash
 # Enable cross-region restore on the vault
 az backup vault backup-properties set \
-  --name rsv-certlab \
-  --resource-group rg-certlab-monitoring \
+  --name rsv-az104-lab \
+  --resource-group rg-az104-lab-monitoring \
   --cross-region-restore-flag true 2>/dev/null \
   || echo "ℹ️ CRR requires GRS redundancy on the vault"
 
 # Check vault redundancy
 az backup vault show \
-  --name rsv-certlab \
-  --resource-group rg-certlab-monitoring \
+  --name rsv-az104-lab \
+  --resource-group rg-az104-lab-monitoring \
   --query "properties.storageType" 2>/dev/null
 ```
 
@@ -759,17 +759,17 @@ az backup vault show \
 ```bash
 # Disable backup protection (required before vault deletion)
 az backup protection disable \
-  --vault-name rsv-certlab \
-  --resource-group rg-certlab-monitoring \
-  --container-name "$(az backup container list --vault-name rsv-certlab --resource-group rg-certlab-monitoring --backup-management-type AzureIaasVM --query '[0].name' -o tsv 2>/dev/null)" \
-  --item-name "$(az backup item list --vault-name rsv-certlab --resource-group rg-certlab-monitoring --query '[0].name' -o tsv 2>/dev/null)" \
+  --vault-name rsv-az104-lab \
+  --resource-group rg-az104-lab-monitoring \
+  --container-name "$(az backup container list --vault-name rsv-az104-lab --resource-group rg-az104-lab-monitoring --backup-management-type AzureIaasVM --query '[0].name' -o tsv 2>/dev/null)" \
+  --item-name "$(az backup item list --vault-name rsv-az104-lab --resource-group rg-az104-lab-monitoring --query '[0].name' -o tsv 2>/dev/null)" \
   --delete-backup-data true --yes 2>/dev/null
 
 # Delete Recovery Services vault
-az backup vault delete --name rsv-certlab --resource-group rg-certlab-monitoring --yes --force 2>/dev/null
+az backup vault delete --name rsv-az104-lab --resource-group rg-az104-lab-monitoring --yes --force 2>/dev/null
 
 # Remove resource group
-az group delete --name rg-certlab-monitoring --yes --no-wait
+az group delete --name rg-az104-lab-monitoring --yes --no-wait
 
 echo "✅ Monitoring & backup lab resources cleaned up"
 ```

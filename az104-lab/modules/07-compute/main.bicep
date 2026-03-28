@@ -23,7 +23,7 @@ param spoke1AppSubnetId string
 @description('Admin username for both Linux and Windows VMs. AZ-104 tests knowledge of VM authentication options.')
 @minLength(1)
 @maxLength(64)
-param adminUsername string = 'certlabadmin'
+param adminUsername string = 'az104-labadmin'
 
 @description('SSH public key for the Linux VM. Password auth is disabled — SSH keys are the recommended approach for Linux VMs.')
 @secure()
@@ -35,7 +35,7 @@ param adminPublicKey string
 param adminPassword string
 
 @description('Environment label applied to every resource via tags. Useful for policy-based governance exercises in Module 02.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 @description('Deterministic unique suffix derived from the resource group ID. Ensures globally unique names for ACR, App Service, etc.')
 param uniqueSuffix string = uniqueString(resourceGroup().id)
@@ -55,28 +55,28 @@ var commonTags = {
 }
 
 @description('Linux VM name following the naming convention: vm-{product}-{function}.')
-var linuxVmName = 'vm-certlab-linux1'
+var linuxVmName = 'vm-az104-lab-linux1'
 
 @description('Windows VM name following the naming convention.')
-var windowsVmName = 'vm-certlab-win1'
+var windowsVmName = 'vm-az104-lab-win1'
 
 @description('VMSS name following the naming convention.')
-var vmssName = 'vmss-certlab-web'
+var vmssName = 'vmss-az104-lab-web'
 
 @description('Availability set for Windows VMs. AZ-104 tests the difference between availability sets and availability zones.')
-var availabilitySetName = 'avset-certlab-win'
+var availabilitySetName = 'avset-az104-lab-win'
 
 @description('ACR name — must be globally unique, alphanumeric only, 5-50 chars.')
-var acrName = 'acrcertlab${uniqueSuffix}'
+var acrName = 'acraz104-lab${uniqueSuffix}'
 
 @description('Container Instance name.')
-var aciName = 'ci-certlab-hello'
+var aciName = 'ci-az104-lab-hello'
 
 @description('App Service Plan name.')
-var appServicePlanName = 'plan-certlab-web'
+var appServicePlanName = 'plan-az104-lab-web'
 
 @description('App Service name — must be globally unique as it becomes a DNS name.')
-var appServiceName = 'app-certlab-web-${uniqueSuffix}'
+var appServiceName = 'app-az104-lab-web-${uniqueSuffix}'
 
 @description('Nginx install script encoded as base64 for the custom script extension. AZ-104 frequently tests custom script extensions.')
 var nginxInstallScript = base64('#!/bin/bash\napt-get update && apt-get install -y nginx')
@@ -684,13 +684,13 @@ output windowsVmId string = windowsVm.id
 @description('Resource ID of the VMSS.')
 output vmssId string = vmss.id
 
-@description('ACR login server URL (e.g., acrcertlabxyz.azurecr.io). Used to push/pull container images.')
+@description('ACR login server URL (e.g., acraz104-labxyz.azurecr.io). Used to push/pull container images.')
 output acrLoginServer string = acr.properties.loginServer
 
 @description('Public IP address of the ACI container instance.')
 output aciIpAddress string = aci.properties.ipAddress.ip
 
-@description('Default hostname of the App Service (e.g., app-certlab-web-xyz.azurewebsites.net).')
+@description('Default hostname of the App Service (e.g., app-az104-lab-web-xyz.azurewebsites.net).')
 output appServiceUrl string = 'https://${appService.properties.defaultHostName}'
 
 @description('Name of the ACR for use in downstream commands.')

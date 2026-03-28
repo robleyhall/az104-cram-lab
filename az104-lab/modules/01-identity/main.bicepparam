@@ -9,7 +9,7 @@ using './main.bicep'
 // ================================================================
 
 param location = 'eastus'
-param environment = 'certlab'
+param environment = 'az104-lab'
 param projectPrefix = 'az104'
 
 // Populate these after running entra-setup.sh — it prints the object IDs.

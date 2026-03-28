@@ -12,12 +12,12 @@ using './main.bicep'
 // ──────────────────────────────────────────────────────────────────
 
 // Subnet IDs from Module 03 (Networking) — replace with actual resource IDs
-param spoke1DefaultSubnetId = '<REPLACE: /subscriptions/{sub}/resourceGroups/rg-certlab-networking/providers/Microsoft.Network/virtualNetworks/vnet-certlab-spoke1/subnets/default>'
-param spoke1AppSubnetId = '<REPLACE: /subscriptions/{sub}/resourceGroups/rg-certlab-networking/providers/Microsoft.Network/virtualNetworks/vnet-certlab-spoke1/subnets/app>'
+param spoke1DefaultSubnetId = '<REPLACE: /subscriptions/{sub}/resourceGroups/rg-az104-lab-networking/providers/Microsoft.Network/virtualNetworks/vnet-az104-lab-spoke1/subnets/default>'
+param spoke1AppSubnetId = '<REPLACE: /subscriptions/{sub}/resourceGroups/rg-az104-lab-networking/providers/Microsoft.Network/virtualNetworks/vnet-az104-lab-spoke1/subnets/app>'
 
 // SSH public key for the Linux VM — paste your public key here
-// Generate one with: ssh-keygen -t rsa -b 4096 -f ~/.ssh/az104-certlab
-param adminPublicKey = '<REPLACE: paste contents of ~/.ssh/az104-certlab.pub>'
+// Generate one with: ssh-keygen -t rsa -b 4096 -f ~/.ssh/az104-az104-lab
+param adminPublicKey = '<REPLACE: paste contents of ~/.ssh/az104-az104-lab.pub>'
 
 // Windows VM password — supply at deploy time instead of hardcoding:
 //   az deployment group create ... --parameters adminPassword='YourP@ssw0rd!'

@@ -8,7 +8,7 @@ set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
-RG_NAME="rg-certlab-governance"
+RG_NAME="rg-az104-lab-governance"
 PASS_COUNT=0; FAIL_COUNT=0; WARN_COUNT=0
 
 pass() { echo -e "  ${GREEN}✅ PASS${NC} — $*"; PASS_COUNT=$((PASS_COUNT + 1)); }
@@ -57,13 +57,13 @@ else
     fail "No policy assignments found on $RG_NAME"
 fi
 
-# Check subscription-level policies with certlab in the name
+# Check subscription-level policies with az104-lab in the name
 SUB_POLICIES=$(az policy assignment list \
-    --query "[?contains(displayName,'certlab') || contains(name,'certlab')] | length([])" -o tsv 2>/dev/null || echo "0")
+    --query "[?contains(displayName,'az104-lab') || contains(name,'az104-lab')] | length([])" -o tsv 2>/dev/null || echo "0")
 if [[ "$SUB_POLICIES" -gt 0 ]]; then
-    pass "Found $SUB_POLICIES subscription-level certlab policy assignment(s)"
+    pass "Found $SUB_POLICIES subscription-level az104-lab policy assignment(s)"
 else
-    skip "No subscription-level certlab policy assignments found (may be scoped to RG)"
+    skip "No subscription-level az104-lab policy assignments found (may be scoped to RG)"
 fi
 
 # --- Resource Locks ---
@@ -89,20 +89,20 @@ fi
 header "Custom Role Definition"
 SUB_ID=$(az account show --query "id" -o tsv 2>/dev/null)
 CUSTOM_ROLES=$(az role definition list --custom-role-only true \
-    --query "[?contains(roleName,'certlab')] | length([])" -o tsv 2>/dev/null || echo "0")
+    --query "[?contains(roleName,'az104-lab')] | length([])" -o tsv 2>/dev/null || echo "0")
 if [[ "$CUSTOM_ROLES" -gt 0 ]]; then
-    pass "Found $CUSTOM_ROLES custom role definition(s) with 'certlab' in name"
+    pass "Found $CUSTOM_ROLES custom role definition(s) with 'az104-lab' in name"
 else
-    fail "No custom role definitions with 'certlab' found"
+    fail "No custom role definitions with 'az104-lab' found"
 fi
 
 # --- Budget ---
 header "Budget"
-BUDGET_COUNT=$(az consumption budget list --query "[?contains(name,'certlab')] | length([])" -o tsv 2>/dev/null || echo "0")
+BUDGET_COUNT=$(az consumption budget list --query "[?contains(name,'az104-lab')] | length([])" -o tsv 2>/dev/null || echo "0")
 if [[ "$BUDGET_COUNT" -gt 0 ]]; then
-    pass "Found $BUDGET_COUNT budget(s) with 'certlab' in name"
+    pass "Found $BUDGET_COUNT budget(s) with 'az104-lab' in name"
 else
-    fail "No budgets with 'certlab' found (check Azure Portal > Cost Management)"
+    fail "No budgets with 'az104-lab' found (check Azure Portal > Cost Management)"
 fi
 
 # --- Summary ---

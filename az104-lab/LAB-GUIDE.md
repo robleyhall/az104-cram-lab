@@ -79,15 +79,15 @@ This lab uses a **hub-spoke network topology** — the most common enterprise Az
 
 | Resource Group | Module | Purpose |
 |---------------|--------|---------|
-| rg-certlab-foundation | 00 | Hub VNet, shared infrastructure |
-| rg-certlab-identity | 01 | Managed identities, role assignments |
-| rg-certlab-governance | 02 | Policy, locks, budgets, custom roles |
-| rg-certlab-networking | 03 | Spoke VNets, peering, NSGs, ASGs |
-| rg-certlab-dns-connectivity | 04 | DNS zones, UDRs, endpoints, Bastion |
-| rg-certlab-load-balancing | 05 | Load Balancer, Traffic Manager |
-| rg-certlab-storage | 06 | Storage accounts, blob, file shares |
-| rg-certlab-compute | 07 | VMs, VMSS, ACI, ACR, App Service |
-| rg-certlab-monitoring | 08 | Log Analytics, alerts, Recovery Services |
+| rg-az104-lab-foundation | 00 | Hub VNet, shared infrastructure |
+| rg-az104-lab-identity | 01 | Managed identities, role assignments |
+| rg-az104-lab-governance | 02 | Policy, locks, budgets, custom roles |
+| rg-az104-lab-networking | 03 | Spoke VNets, peering, NSGs, ASGs |
+| rg-az104-lab-dns-connectivity | 04 | DNS zones, UDRs, endpoints, Bastion |
+| rg-az104-lab-load-balancing | 05 | Load Balancer, Traffic Manager |
+| rg-az104-lab-storage | 06 | Storage accounts, blob, file shares |
+| rg-az104-lab-compute | 07 | VMs, VMSS, ACI, ACR, App Service |
+| rg-az104-lab-monitoring | 08 | Log Analytics, alerts, Recovery Services |
 
 ### Deployment Order
 
@@ -98,6 +98,65 @@ This lab uses a **hub-spoke network topology** — the most common enterprise Az
                                ──► 05-load-balancing
                                ──► 07-compute ──► 08-monitoring
 ```
+
+---
+
+## Module 00: Foundation Setup
+
+**Exam Domain:** Implement and manage virtual networking (15–20%)
+
+### Deploy
+
+```bash
+./scripts/deploy-module.sh 00-foundation
+```
+
+### What Gets Deployed
+
+The Bicep template creates a single hub virtual network with five subnets:
+
+| Resource | Name | Purpose |
+|----------|------|---------|
+| Virtual Network | `vnet-az104-lab-hub` | Hub VNet (10.0.0.0/16) for hub-spoke topology |
+| Subnet | `default` (10.0.0.0/24) | General-purpose workloads |
+| Subnet | `AzureBastionSubnet` (10.0.1.0/26) | Azure Bastion — secure RDP/SSH without public IPs |
+| Subnet | `GatewaySubnet` (10.0.2.0/27) | VPN/ExpressRoute gateway |
+| Subnet | `AzureFirewallSubnet` (10.0.3.0/26) | Azure Firewall |
+| Subnet | `management` (10.0.4.0/24) | Management and monitoring workloads |
+
+### Verify
+
+```bash
+# List the VNet and its subnets
+az network vnet subnet list \
+  --resource-group rg-az104-lab-foundation \
+  --vnet-name vnet-az104-lab-hub \
+  --output table
+
+# List ALL resources in the resource group
+az resource list \
+  --resource-group rg-az104-lab-foundation \
+  --query "[].{Name:name, Type:type}" \
+  --output table
+```
+
+### ⚠️ You May See Extra Resources (Policy-Created NSGs)
+
+After deploying, you may notice **Network Security Groups (NSGs)** in `rg-az104-lab-foundation` that are _not_ defined in the Bicep template:
+
+| Resource | Created By |
+|----------|-----------|
+| `vnet-az104-lab-hub-default-nsg-eastus` | Azure Policy |
+| `vnet-az104-lab-hub-AzureBastionSubnet-nsg-eastus` | Azure Policy |
+| `vnet-az104-lab-hub-management-nsg-eastus` | Azure Policy |
+
+These are **automatically created by a `DeployIfNotExists` policy** assigned at the subscription or management group level. Enterprise subscriptions commonly enforce NSG association on subnet creation to ensure that no subnet exists without network-level access controls.
+
+Notice that `GatewaySubnet` and `AzureFirewallSubnet` do **not** get auto-created NSGs — these special-purpose subnets are typically excluded by policy because they have their own security models.
+
+💡 **Exam Tip:** The `DeployIfNotExists` policy effect can automatically deploy companion resources (like NSGs, diagnostic settings, or monitoring agents) when a target resource is created. This is a common real-world pattern and is covered in detail in [Module 02: Governance & Compliance](#module-02-governance--compliance). The naming convention `{vnet}-{subnet}-nsg-{region}` is a telltale sign of policy-driven deployment.
+
+> **Key takeaway:** Always run `az resource list` after a deployment to see the _full_ picture — not just what your template defined. Understanding the gap between "what I deployed" and "what exists" is an important operational skill.
 
 ---
 
@@ -214,18 +273,18 @@ Requirements for SSPR:
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-identity --location eastus
+az group create --name rg-az104-lab-identity --location eastus
 
 # Preview deployment
 az deployment group create \
-  --resource-group rg-certlab-identity \
+  --resource-group rg-az104-lab-identity \
   --template-file modules/01-identity/main.bicep \
   --parameters modules/01-identity/main.bicepparam \
   --what-if
 
 # Deploy
 az deployment group create \
-  --resource-group rg-certlab-identity \
+  --resource-group rg-az104-lab-identity \
   --template-file modules/01-identity/main.bicep \
   --parameters modules/01-identity/main.bicepparam
 
@@ -238,16 +297,16 @@ chmod +x modules/01-identity/entra-setup.sh
 
 ```bash
 # List created users
-az ad user list --filter "startswith(displayName,'certlab')" -o table
+az ad user list --filter "startswith(displayName,'az104-lab')" -o table
 
 # List groups
-az ad group list --filter "startswith(displayName,'certlab')" -o table
+az ad group list --filter "startswith(displayName,'az104-lab')" -o table
 
 # Check group membership
-az ad group member list --group "certlab-admins" -o table
+az ad group member list --group "az104-lab-admins" -o table
 
 # Check role assignments
-az role assignment list --resource-group rg-certlab-identity -o table
+az role assignment list --resource-group rg-az104-lab-identity -o table
 ```
 
 **Portal Navigation:** Entra ID → Users → All Users | Groups → All Groups | Roles and administrators
@@ -258,8 +317,8 @@ See [exercises/01-identity-exercises.md](exercises/01-identity-exercises.md) for
 
 **Quick Guided Exercise:** Create a dynamic group where membership is based on job title containing "Developer":
 ```bash
-az ad group create --display-name "certlab-developers-dynamic" \
-  --mail-nickname "certlab-devs-dyn" \
+az ad group create --display-name "az104-lab-developers-dynamic" \
+  --mail-nickname "az104-lab-devs-dyn" \
   --description "Dynamic group for developers" \
   --membership-rule "user.jobTitle -contains \"Developer\"" \
   --membership-rule-processing-state "On" \
@@ -393,19 +452,19 @@ Key tools:
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-governance --location eastus \
-  --tags Environment=certlab Project=az104-lab Module=governance
+az group create --name rg-az104-lab-governance --location eastus \
+  --tags Environment=az104-lab Project=az104-lab Module=governance
 
 # Preview deployment
 az deployment group create \
-  --resource-group rg-certlab-governance \
+  --resource-group rg-az104-lab-governance \
   --template-file modules/02-governance/main.bicep \
   --parameters modules/02-governance/main.bicepparam \
   --what-if
 
 # Deploy
 az deployment group create \
-  --resource-group rg-certlab-governance \
+  --resource-group rg-az104-lab-governance \
   --template-file modules/02-governance/main.bicep \
   --parameters modules/02-governance/main.bicepparam
 
@@ -421,19 +480,19 @@ az policy definition create \
 
 ```bash
 # List policy assignments on resource group
-az policy assignment list --resource-group rg-certlab-governance -o table
+az policy assignment list --resource-group rg-az104-lab-governance -o table
 
 # Check policy compliance
-az policy state summarize --resource-group rg-certlab-governance
+az policy state summarize --resource-group rg-az104-lab-governance
 
 # List resource locks
-az lock list --resource-group rg-certlab-governance -o table
+az lock list --resource-group rg-az104-lab-governance -o table
 
 # List role assignments
-az role assignment list --resource-group rg-certlab-governance -o table
+az role assignment list --resource-group rg-az104-lab-governance -o table
 
 # Check tags
-az group show --name rg-certlab-governance --query tags
+az group show --name rg-az104-lab-governance --query tags
 ```
 
 ### Exercises
@@ -540,34 +599,34 @@ See [exercises/02-governance-exercises.md](exercises/02-governance-exercises.md)
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-networking --location eastus
+az group create --name rg-az104-lab-networking --location eastus
 
 # Preview
 az deployment group create \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file modules/03-networking/main.bicep \
   --parameters modules/03-networking/main.bicepparam \
   --what-if
 
 # Deploy
 az deployment group create \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file modules/03-networking/main.bicep \
   --parameters modules/03-networking/main.bicepparam
 
 # Set up hub-side peering (cross-resource-group)
 az network vnet peering create \
   --name hub-to-spoke1 \
-  --resource-group rg-certlab-foundation \
-  --vnet-name vnet-certlab-hub \
-  --remote-vnet $(az network vnet show -g rg-certlab-networking -n vnet-certlab-spoke1 --query id -o tsv) \
+  --resource-group rg-az104-lab-foundation \
+  --vnet-name vnet-az104-lab-hub \
+  --remote-vnet $(az network vnet show -g rg-az104-lab-networking -n vnet-az104-lab-spoke1 --query id -o tsv) \
   --allow-forwarded-traffic --allow-gateway-transit
 
 az network vnet peering create \
   --name hub-to-spoke2 \
-  --resource-group rg-certlab-foundation \
-  --vnet-name vnet-certlab-hub \
-  --remote-vnet $(az network vnet show -g rg-certlab-networking -n vnet-certlab-spoke2 --query id -o tsv) \
+  --resource-group rg-az104-lab-foundation \
+  --vnet-name vnet-az104-lab-hub \
+  --remote-vnet $(az network vnet show -g rg-az104-lab-networking -n vnet-az104-lab-spoke2 --query id -o tsv) \
   --allow-forwarded-traffic --allow-gateway-transit
 ```
 
@@ -575,16 +634,16 @@ az network vnet peering create \
 
 ```bash
 # List VNets
-az network vnet list -g rg-certlab-networking -o table
+az network vnet list -g rg-az104-lab-networking -o table
 
 # Check peering status
-az network vnet peering list -g rg-certlab-networking --vnet-name vnet-certlab-spoke1 -o table
+az network vnet peering list -g rg-az104-lab-networking --vnet-name vnet-az104-lab-spoke1 -o table
 
 # List NSG rules
-az network nsg rule list -g rg-certlab-networking --nsg-name nsg-certlab-web -o table
+az network nsg rule list -g rg-az104-lab-networking --nsg-name nsg-az104-lab-web -o table
 
 # Check effective security rules on a NIC
-az network nic list-effective-nsg -g rg-certlab-networking -n <nic-name>
+az network nic list-effective-nsg -g rg-az104-lab-networking -n <nic-name>
 ```
 
 ### Exercises
@@ -692,17 +751,17 @@ Provides secure RDP/SSH access to VMs without public IPs on the VMs.
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-dns-connectivity --location eastus
+az group create --name rg-az104-lab-dns-connectivity --location eastus
 
 # Get hub VNet and spoke1 VNet IDs
-HUB_VNET_ID=$(az network vnet show -g rg-certlab-foundation -n vnet-certlab-hub --query id -o tsv)
-SPOKE1_VNET_ID=$(az network vnet show -g rg-certlab-networking -n vnet-certlab-spoke1 --query id -o tsv)
-SPOKE1_DATA_SUBNET_ID=$(az network vnet subnet show -g rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 -n data --query id -o tsv)
+HUB_VNET_ID=$(az network vnet show -g rg-az104-lab-foundation -n vnet-az104-lab-hub --query id -o tsv)
+SPOKE1_VNET_ID=$(az network vnet show -g rg-az104-lab-networking -n vnet-az104-lab-spoke1 --query id -o tsv)
+SPOKE1_DATA_SUBNET_ID=$(az network vnet subnet show -g rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 -n data --query id -o tsv)
 
 # Preview
 az deployment group create \
-  --resource-group rg-certlab-dns-connectivity \
+  --resource-group rg-az104-lab-dns-connectivity \
   --template-file modules/04-dns-connectivity/main.bicep \
   --parameters modules/04-dns-connectivity/main.bicepparam \
   --parameters hubVNetId=$HUB_VNET_ID spoke1VNetId=$SPOKE1_VNET_ID \
@@ -711,7 +770,7 @@ az deployment group create \
 
 # Deploy (Bastion costs ~$0.19/hr — add deployBastion=false to skip)
 az deployment group create \
-  --resource-group rg-certlab-dns-connectivity \
+  --resource-group rg-az104-lab-dns-connectivity \
   --template-file modules/04-dns-connectivity/main.bicep \
   --parameters modules/04-dns-connectivity/main.bicepparam \
   --parameters hubVNetId=$HUB_VNET_ID spoke1VNetId=$SPOKE1_VNET_ID \
@@ -722,19 +781,19 @@ az deployment group create \
 
 ```bash
 # List DNS zones
-az network dns zone list -g rg-certlab-dns-connectivity -o table
+az network dns zone list -g rg-az104-lab-dns-connectivity -o table
 
 # List DNS records
-az network dns record-set list -g rg-certlab-dns-connectivity -z certlab.example.com -o table
+az network dns record-set list -g rg-az104-lab-dns-connectivity -z az104-lab.example.com -o table
 
 # List Private DNS zones
-az network private-dns zone list -g rg-certlab-dns-connectivity -o table
+az network private-dns zone list -g rg-az104-lab-dns-connectivity -o table
 
 # Check route table
-az network route-table route list -g rg-certlab-dns-connectivity --route-table-name rt-certlab-spoke1 -o table
+az network route-table route list -g rg-az104-lab-dns-connectivity --route-table-name rt-az104-lab-spoke1 -o table
 
 # Check effective routes on a NIC
-az network nic show-effective-route-table -g rg-certlab-networking -n <nic-name>
+az network nic show-effective-route-table -g rg-az104-lab-networking -n <nic-name>
 ```
 
 ### Exercises
@@ -843,17 +902,17 @@ Components: Frontend IP → Load balancing rules → Backend pool, with health p
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-load-balancing --location eastus
+az group create --name rg-az104-lab-load-balancing --location eastus
 
 # Deploy
 az deployment group create \
-  --resource-group rg-certlab-load-balancing \
+  --resource-group rg-az104-lab-load-balancing \
   --template-file modules/05-load-balancing/main.bicep \
   --parameters modules/05-load-balancing/main.bicepparam \
   --what-if
 
 az deployment group create \
-  --resource-group rg-certlab-load-balancing \
+  --resource-group rg-az104-lab-load-balancing \
   --template-file modules/05-load-balancing/main.bicep \
   --parameters modules/05-load-balancing/main.bicepparam
 ```
@@ -862,16 +921,16 @@ az deployment group create \
 
 ```bash
 # Check load balancer
-az network lb show -g rg-certlab-load-balancing -n lb-certlab-web -o table
+az network lb show -g rg-az104-lab-load-balancing -n lb-az104-lab-web -o table
 
 # List LB rules
-az network lb rule list -g rg-certlab-load-balancing --lb-name lb-certlab-web -o table
+az network lb rule list -g rg-az104-lab-load-balancing --lb-name lb-az104-lab-web -o table
 
 # Check health probe status
-az network lb probe list -g rg-certlab-load-balancing --lb-name lb-certlab-web -o table
+az network lb probe list -g rg-az104-lab-load-balancing --lb-name lb-az104-lab-web -o table
 
 # Check Traffic Manager
-az network traffic-manager profile show -g rg-certlab-load-balancing -n tm-certlab-web -o table
+az network traffic-manager profile show -g rg-az104-lab-load-balancing -n tm-az104-lab-web -o table
 ```
 
 ### Exercises
@@ -997,22 +1056,22 @@ Rules can filter by container, prefix, and blob type.
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-storage --location eastus
+az group create --name rg-az104-lab-storage --location eastus
 
 # Get subnet ID for storage firewall rules
-DATA_SUBNET_ID=$(az network vnet subnet show -g rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 -n data --query id -o tsv)
+DATA_SUBNET_ID=$(az network vnet subnet show -g rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 -n data --query id -o tsv)
 
 # Deploy
 az deployment group create \
-  --resource-group rg-certlab-storage \
+  --resource-group rg-az104-lab-storage \
   --template-file modules/06-storage/main.bicep \
   --parameters modules/06-storage/main.bicepparam \
   --parameters dataSubnetId=$DATA_SUBNET_ID \
   --what-if
 
 az deployment group create \
-  --resource-group rg-certlab-storage \
+  --resource-group rg-az104-lab-storage \
   --template-file modules/06-storage/main.bicep \
   --parameters modules/06-storage/main.bicepparam \
   --parameters dataSubnetId=$DATA_SUBNET_ID
@@ -1022,16 +1081,16 @@ az deployment group create \
 
 ```bash
 # List storage accounts
-az storage account list -g rg-certlab-storage -o table
+az storage account list -g rg-az104-lab-storage -o table
 
 # Get primary account name
-STORAGE_NAME=$(az storage account list -g rg-certlab-storage --query "[0].name" -o tsv)
+STORAGE_NAME=$(az storage account list -g rg-az104-lab-storage --query "[0].name" -o tsv)
 
 # List containers
 az storage container list --account-name $STORAGE_NAME --auth-mode login -o table
 
 # Check lifecycle policy
-az storage account management-policy show --account-name $STORAGE_NAME -g rg-certlab-storage
+az storage account management-policy show --account-name $STORAGE_NAME -g rg-az104-lab-storage
 
 # Generate a SAS token (account-level)
 az storage account generate-sas \
@@ -1045,7 +1104,7 @@ az storage account generate-sas \
 # Upload a blob using AzCopy
 echo "Hello AZ-104" > /tmp/testblob.txt
 az storage blob upload --account-name $STORAGE_NAME \
-  --container-name certlab-data --name testblob.txt \
+  --container-name az104-lab-data --name testblob.txt \
   --file /tmp/testblob.txt --auth-mode login
 ```
 
@@ -1179,17 +1238,17 @@ B-series VMs are **burstable** — they accumulate CPU credits when idle and spe
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-compute --location eastus
+az group create --name rg-az104-lab-compute --location eastus
 
 # Get subnet IDs
-SPOKE1_DEFAULT_SUBNET=$(az network vnet subnet show -g rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 -n default --query id -o tsv)
-SPOKE1_APP_SUBNET=$(az network vnet subnet show -g rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 -n app --query id -o tsv)
+SPOKE1_DEFAULT_SUBNET=$(az network vnet subnet show -g rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 -n default --query id -o tsv)
+SPOKE1_APP_SUBNET=$(az network vnet subnet show -g rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 -n app --query id -o tsv)
 
 # Deploy (requires SSH public key and admin password)
 az deployment group create \
-  --resource-group rg-certlab-compute \
+  --resource-group rg-az104-lab-compute \
   --template-file modules/07-compute/main.bicep \
   --parameters modules/07-compute/main.bicepparam \
   --parameters spoke1DefaultSubnetId=$SPOKE1_DEFAULT_SUBNET \
@@ -1199,7 +1258,7 @@ az deployment group create \
   --what-if
 
 az deployment group create \
-  --resource-group rg-certlab-compute \
+  --resource-group rg-az104-lab-compute \
   --template-file modules/07-compute/main.bicep \
   --parameters modules/07-compute/main.bicepparam \
   --parameters spoke1DefaultSubnetId=$SPOKE1_DEFAULT_SUBNET \
@@ -1212,22 +1271,22 @@ az deployment group create \
 
 ```bash
 # List VMs
-az vm list -g rg-certlab-compute -o table --show-details
+az vm list -g rg-az104-lab-compute -o table --show-details
 
 # Check VMSS
-az vmss list -g rg-certlab-compute -o table
-az vmss list-instances -g rg-certlab-compute --name vmss-certlab-web -o table
+az vmss list -g rg-az104-lab-compute -o table
+az vmss list-instances -g rg-az104-lab-compute --name vmss-az104-lab-web -o table
 
 # Check ACR
-az acr list -g rg-certlab-compute -o table
+az acr list -g rg-az104-lab-compute -o table
 
 # Check ACI
-az container list -g rg-certlab-compute -o table
-az container logs -g rg-certlab-compute --name ci-certlab-hello
+az container list -g rg-az104-lab-compute -o table
+az container logs -g rg-az104-lab-compute --name ci-az104-lab-hello
 
 # Check App Service
-az webapp list -g rg-certlab-compute -o table
-az webapp deployment slot list -g rg-certlab-compute --name <app-name> -o table
+az webapp list -g rg-az104-lab-compute -o table
+az webapp deployment slot list -g rg-az104-lab-compute --name <app-name> -o table
 ```
 
 ### Exercises
@@ -1391,14 +1450,14 @@ See `modules/08-monitoring/sample-kql-queries.txt` for 10 useful queries.
 
 ```bash
 # Create resource group
-az group create --name rg-certlab-monitoring --location eastus
+az group create --name rg-az104-lab-monitoring --location eastus
 
 # Optionally get VM resource ID for metric alerts
-VM_ID=$(az vm show -g rg-certlab-compute -n vm-certlab-linux1 --query id -o tsv 2>/dev/null)
+VM_ID=$(az vm show -g rg-az104-lab-compute -n vm-az104-lab-linux1 --query id -o tsv 2>/dev/null)
 
 # Deploy
 az deployment group create \
-  --resource-group rg-certlab-monitoring \
+  --resource-group rg-az104-lab-monitoring \
   --template-file modules/08-monitoring/main.bicep \
   --parameters modules/08-monitoring/main.bicepparam \
   --parameters contactEmail='your-email@example.com' \
@@ -1406,7 +1465,7 @@ az deployment group create \
   --what-if
 
 az deployment group create \
-  --resource-group rg-certlab-monitoring \
+  --resource-group rg-az104-lab-monitoring \
   --template-file modules/08-monitoring/main.bicep \
   --parameters modules/08-monitoring/main.bicepparam \
   --parameters contactEmail='your-email@example.com' \
@@ -1414,36 +1473,36 @@ az deployment group create \
 
 # Enable VM diagnostics (post-deployment)
 WORKSPACE_ID=$(az monitor log-analytics workspace show \
-  -g rg-certlab-monitoring -n law-certlab-monitor --query id -o tsv)
+  -g rg-az104-lab-monitoring -n law-az104-lab-monitor --query id -o tsv)
 
-az vm diagnostics set -g rg-certlab-compute -n vm-certlab-linux1 \
+az vm diagnostics set -g rg-az104-lab-compute -n vm-az104-lab-linux1 \
   --settings '{}' || echo "Configure via Portal: VM → Diagnostic settings → Add"
 
 # Configure VM backup
 az backup protection enable-for-vm \
-  --resource-group rg-certlab-monitoring \
-  --vault-name rsv-certlab-backup \
-  --vm $(az vm show -g rg-certlab-compute -n vm-certlab-linux1 --query id -o tsv) \
-  --policy-name policy-certlab-vm-daily
+  --resource-group rg-az104-lab-monitoring \
+  --vault-name rsv-az104-lab-backup \
+  --vm $(az vm show -g rg-az104-lab-compute -n vm-az104-lab-linux1 --query id -o tsv) \
+  --policy-name policy-az104-lab-vm-daily
 ```
 
 ### Explore & Verify
 
 ```bash
 # Check Log Analytics workspace
-az monitor log-analytics workspace show -g rg-certlab-monitoring -n law-certlab-monitor -o table
+az monitor log-analytics workspace show -g rg-az104-lab-monitoring -n law-az104-lab-monitor -o table
 
 # List alert rules
-az monitor metrics alert list -g rg-certlab-monitoring -o table
+az monitor metrics alert list -g rg-az104-lab-monitoring -o table
 
 # Check action groups
-az monitor action-group list -g rg-certlab-monitoring -o table
+az monitor action-group list -g rg-az104-lab-monitoring -o table
 
 # Check Recovery Services vault
-az backup vault show -g rg-certlab-monitoring -n rsv-certlab-backup -o table
+az backup vault show -g rg-az104-lab-monitoring -n rsv-az104-lab-backup -o table
 
 # List backup policies
-az backup policy list -g rg-certlab-monitoring --vault-name rsv-certlab-backup -o table
+az backup policy list -g rg-az104-lab-monitoring --vault-name rsv-az104-lab-backup -o table
 
 # Run a KQL query
 az monitor log-analytics query \

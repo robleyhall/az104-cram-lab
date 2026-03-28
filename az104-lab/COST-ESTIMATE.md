@@ -55,7 +55,7 @@
 
 1. **Deallocate VMs when not studying** — stopped (deallocated) VMs don't incur compute charges
    ```bash
-   az vm deallocate --resource-group rg-certlab-compute --name certlab-vm-linux
+   az vm deallocate --resource-group rg-az104-lab-compute --name az104-lab-vm-linux
    ```
 
 2. **Use auto-shutdown schedules** — already configured in lab templates to shut down at 10:00 PM local time

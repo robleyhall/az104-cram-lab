@@ -6,14 +6,14 @@ Infrastructure scaffolding for the AZ-104 certification lab. **Deploy this modul
 
 | Resource | Name | Purpose |
 |----------|------|---------|
-| Virtual Network | `vnet-certlab-hub` | Hub VNet for hub-spoke topology (10.0.0.0/16) |
+| Virtual Network | `vnet-az104-lab-hub` | Hub VNet for hub-spoke topology (10.0.0.0/16) |
 | Subnet | `default` | General-purpose workloads (10.0.0.0/24) |
 | Subnet | `AzureBastionSubnet` | Azure Bastion — secure RDP/SSH without public IPs (10.0.1.0/26) |
 | Subnet | `GatewaySubnet` | VPN/ExpressRoute gateway (10.0.2.0/27) |
 | Subnet | `AzureFirewallSubnet` | Azure Firewall (10.0.3.0/26) |
 | Subnet | `management` | Management and monitoring workloads (10.0.4.0/24) |
 
-All resources are tagged with `Environment=certlab`, `Project=az104-lab`, `Module=foundation`.
+All resources are tagged with `Environment=az104-lab`, `Project=az104-lab`, `Module=foundation`.
 
 ## Prerequisites
 
@@ -32,18 +32,18 @@ az bicep version
 
 ```bash
 # 1. Create the resource group
-az group create --name rg-certlab-foundation --location eastus
+az group create --name rg-az104-lab-foundation --location eastus
 
 # 2. Preview changes (always do this first!)
 az deployment group create \
-  --resource-group rg-certlab-foundation \
+  --resource-group rg-az104-lab-foundation \
   --template-file main.bicep \
   --parameters main.bicepparam \
   --what-if
 
 # 3. Deploy
 az deployment group create \
-  --resource-group rg-certlab-foundation \
+  --resource-group rg-az104-lab-foundation \
   --template-file main.bicep \
   --parameters main.bicepparam
 ```
@@ -53,22 +53,22 @@ az deployment group create \
 ```bash
 # Confirm the VNet and subnets exist
 az network vnet show \
-  --resource-group rg-certlab-foundation \
-  --name vnet-certlab-hub \
+  --resource-group rg-az104-lab-foundation \
+  --name vnet-az104-lab-hub \
   --query '{name:name, addressSpace:addressSpace.addressPrefixes, subnets:subnets[].name}' \
   --output table
 
 # List all subnets
 az network vnet subnet list \
-  --resource-group rg-certlab-foundation \
-  --vnet-name vnet-certlab-hub \
+  --resource-group rg-az104-lab-foundation \
+  --vnet-name vnet-az104-lab-hub \
   --output table
 ```
 
 ## Clean Up
 
 ```bash
-az group delete --name rg-certlab-foundation --yes --no-wait
+az group delete --name rg-az104-lab-foundation --yes --no-wait
 ```
 
 ## AZ-104 Exam Relevance

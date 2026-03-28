@@ -51,7 +51,7 @@
       "name": "[variables('storageAccountFullName')]",
       "location": "[parameters('location')]",
       "tags": {
-        "Environment": "certlab",
+        "Environment": "az104-lab",
         "Project": "az104-lab",
         "DeployedWith": "ARM-Template"
       },

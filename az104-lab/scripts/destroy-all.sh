@@ -26,7 +26,7 @@ ${BOLD}Options:${NC}
   --yes   Skip confirmation prompts (still requires 'DELETE ALL' confirmation)
 
 ${BOLD}Description:${NC}
-  Destroys all rg-certlab-* resource groups in reverse dependency order.
+  Destroys all rg-az104-lab-* resource groups in reverse dependency order.
   Optionally cleans up Entra ID objects created by the lab.
 EOF
     exit 1
@@ -71,12 +71,12 @@ SUBSCRIPTION=$(az account show --query "name" -o tsv 2>/dev/null)
 info "Subscription: ${BOLD}$SUBSCRIPTION${NC}"
 echo ""
 
-# Discover existing certlab resource groups
+# Discover existing az104-lab resource groups
 EXISTING_RGS=()
-ALL_CERTLAB_RGS=$(az group list --query "[?starts_with(name,'rg-certlab-')].name" -o tsv 2>/dev/null || true)
+ALL_CERTLAB_RGS=$(az group list --query "[?starts_with(name,'rg-az104-lab-')].name" -o tsv 2>/dev/null || true)
 
 if [[ -z "$ALL_CERTLAB_RGS" ]]; then
-    info "No rg-certlab-* resource groups found. Nothing to destroy."
+    info "No rg-az104-lab-* resource groups found. Nothing to destroy."
     exit 0
 fi
 
@@ -116,7 +116,7 @@ header "Deleting Resource Groups"
 DELETED=()
 for module in "${REVERSE_ORDER[@]}"; do
     MODULE_SHORT="${module#[0-9][0-9]-}"
-    RG_NAME="rg-certlab-${MODULE_SHORT}"
+    RG_NAME="rg-az104-lab-${MODULE_SHORT}"
 
     if az group show --name "$RG_NAME" &>/dev/null 2>&1; then
         info "Deleting $RG_NAME..."
@@ -129,7 +129,7 @@ for module in "${REVERSE_ORDER[@]}"; do
     fi
 done
 
-# Catch any extra rg-certlab-* groups not in the standard list
+# Catch any extra rg-az104-lab-* groups not in the standard list
 for rg in "${EXISTING_RGS[@]}"; do
     ALREADY_HANDLED=false
     for d in "${DELETED[@]+"${DELETED[@]}"}"; do
@@ -145,7 +145,7 @@ done
 # --- Entra ID Cleanup ---
 header "Entra ID Cleanup"
 echo -e "${YELLOW}Would you like to clean up Entra ID objects (users, groups, app registrations)?${NC}"
-info "This removes lab users (certlab-*), groups, and service principals."
+info "This removes lab users (az104-lab-*), groups, and service principals."
 echo ""
 
 if [[ "$AUTO_CONFIRM" == true ]]; then
@@ -158,36 +158,36 @@ else
 fi
 
 if [[ "$RUN_ENTRA_CLEANUP" == true ]]; then
-    info "Searching for certlab Entra ID objects..."
+    info "Searching for az104-lab Entra ID objects..."
 
     # Delete lab users
-    LAB_USERS=$(az ad user list --query "[?startsWith(displayName,'certlab-') || startsWith(userPrincipalName,'certlab-')].id" -o tsv 2>/dev/null || true)
+    LAB_USERS=$(az ad user list --query "[?startsWith(displayName,'az104-lab-') || startsWith(userPrincipalName,'az104-lab-')].id" -o tsv 2>/dev/null || true)
     if [[ -n "$LAB_USERS" ]]; then
         while IFS= read -r uid; do
             az ad user delete --id "$uid" 2>/dev/null && ok "Deleted user: $uid" || warn "Could not delete user: $uid"
         done <<< "$LAB_USERS"
     else
-        info "No certlab users found."
+        info "No az104-lab users found."
     fi
 
     # Delete lab groups
-    LAB_GROUPS=$(az ad group list --query "[?startsWith(displayName,'certlab-')].id" -o tsv 2>/dev/null || true)
+    LAB_GROUPS=$(az ad group list --query "[?startsWith(displayName,'az104-lab-')].id" -o tsv 2>/dev/null || true)
     if [[ -n "$LAB_GROUPS" ]]; then
         while IFS= read -r gid; do
             az ad group delete --group "$gid" 2>/dev/null && ok "Deleted group: $gid" || warn "Could not delete group: $gid"
         done <<< "$LAB_GROUPS"
     else
-        info "No certlab groups found."
+        info "No az104-lab groups found."
     fi
 
     # Delete lab app registrations
-    LAB_APPS=$(az ad app list --query "[?startsWith(displayName,'certlab-')].appId" -o tsv 2>/dev/null || true)
+    LAB_APPS=$(az ad app list --query "[?startsWith(displayName,'az104-lab-')].appId" -o tsv 2>/dev/null || true)
     if [[ -n "$LAB_APPS" ]]; then
         while IFS= read -r appid; do
             az ad app delete --id "$appid" 2>/dev/null && ok "Deleted app: $appid" || warn "Could not delete app: $appid"
         done <<< "$LAB_APPS"
     else
-        info "No certlab app registrations found."
+        info "No az104-lab app registrations found."
     fi
 
     ok "Entra ID cleanup complete."
@@ -203,6 +203,6 @@ for rg in "${DELETED[@]}"; do
 done
 echo ""
 info "Deletions are running asynchronously. Monitor with:"
-echo "  az group list --query \"[?starts_with(name,'rg-certlab-')].{Name:name,State:properties.provisioningState}\" -o table"
+echo "  az group list --query \"[?starts_with(name,'rg-az104-lab-')].{Name:name,State:properties.provisioningState}\" -o table"
 echo ""
 ok "Teardown initiated. 🧹"

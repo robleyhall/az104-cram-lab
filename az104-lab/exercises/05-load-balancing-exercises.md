@@ -15,13 +15,13 @@
 - Module 00 (Foundation) deployed
 
 ```bash
-az group create --name rg-certlab-lb --location eastus \
-  --tags Environment=certlab Module=load-balancing
+az group create --name rg-az104-lab-lb --location eastus \
+  --tags Environment=az104-lab Module=load-balancing
 
 # Create a VNet for load balancing exercises
 az network vnet create \
   --name vnet-lb-lab \
-  --resource-group rg-certlab-lb \
+  --resource-group rg-az104-lab-lb \
   --address-prefix 10.20.0.0/16 \
   --subnet-name snet-web \
   --subnet-prefix 10.20.0.0/24
@@ -66,23 +66,23 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network public-ip create \
      --name pip-lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --sku Standard \
      --allocation-method Static \
      --zone 1 2 3 \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Create the load balancer:
    ```bash
    az network lb create \
      --name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --sku Standard \
      --frontend-ip-name fe-web \
      --public-ip-address pip-lb-web \
      --backend-pool-name be-web \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 3. Create two NICs for backend VMs:
@@ -90,7 +90,7 @@ Before starting the exercises, understand when to use each service:
    for i in 1 2; do
      az network nic create \
        --name "nic-web-vm${i}" \
-       --resource-group rg-certlab-lb \
+       --resource-group rg-az104-lab-lb \
        --vnet-name vnet-lb-lab \
        --subnet snet-web \
        --lb-name lb-web \
@@ -102,7 +102,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb address-pool show \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --name be-web \
      --query "{name:name, nicCount:backendIPConfigurations | length(@)}" \
      --output json
@@ -142,7 +142,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb probe create \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --name probe-http \
      --protocol Http \
      --port 80 \
@@ -155,7 +155,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb probe create \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --name probe-tcp-8080 \
      --protocol Tcp \
      --port 8080 \
@@ -167,7 +167,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb rule create \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --name rule-http \
      --protocol Tcp \
      --frontend-port 80 \
@@ -183,7 +183,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb rule create \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --name rule-https-sticky \
      --protocol Tcp \
      --frontend-port 443 \
@@ -197,11 +197,11 @@ Before starting the exercises, understand when to use each service:
 5. Verify all rules and probes:
    ```bash
    echo "=== Health Probes ==="
-   az network lb probe list --lb-name lb-web --resource-group rg-certlab-lb \
+   az network lb probe list --lb-name lb-web --resource-group rg-az104-lab-lb \
      --query "[].{name:name, protocol:protocol, port:port, interval:intervalInSeconds}" -o table
 
    echo "=== Load Balancing Rules ==="
-   az network lb rule list --lb-name lb-web --resource-group rg-certlab-lb \
+   az network lb rule list --lb-name lb-web --resource-group rg-az104-lab-lb \
      --query "[].{name:name, frontPort:frontendPort, backPort:backendPort, persistence:loadDistribution, probe:probe.id}" -o table
    ```
 
@@ -237,7 +237,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb inbound-nat-rule create \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --name nat-ssh-vm1 \
      --protocol Tcp \
      --frontend-port 2201 \
@@ -247,7 +247,7 @@ Before starting the exercises, understand when to use each service:
 
    az network lb inbound-nat-rule create \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --name nat-ssh-vm2 \
      --protocol Tcp \
      --frontend-port 2202 \
@@ -260,7 +260,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb inbound-nat-rule list \
      --lb-name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --query "[].{name:name, fePort:frontendPort, bePort:backendPort, protocol:protocol}" \
      --output table
    ```
@@ -269,7 +269,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network lb show \
      --name lb-web \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --query "{frontend:frontendIPConfigurations[0].name, backendPools:backendAddressPools[].name, rules:loadBalancingRules[].name, probes:probes[].name, natRules:inboundNatRules[].name}" \
      --output json
    ```
@@ -277,7 +277,7 @@ Before starting the exercises, understand when to use each service:
 4. **Explore**: How would you SSH to VM1 vs VM2 through the load balancer?
    ```bash
    LB_IP=$(az network public-ip show --name pip-lb-web \
-     --resource-group rg-certlab-lb --query ipAddress -o tsv)
+     --resource-group rg-az104-lab-lb --query ipAddress -o tsv)
    echo "SSH to VM1: ssh user@${LB_IP} -p 2201"
    echo "SSH to VM2: ssh user@${LB_IP} -p 2202"
    ```
@@ -307,21 +307,21 @@ Before starting the exercises, understand when to use each service:
 1. Create a Traffic Manager profile:
    ```bash
    az network traffic-manager profile create \
-     --name "tm-certlab-$(date +%s | tail -c 6)" \
-     --resource-group rg-certlab-lb \
+     --name "tm-az104-lab-$(date +%s | tail -c 6)" \
+     --resource-group rg-az104-lab-lb \
      --routing-method Performance \
-     --unique-dns-name "tm-certlab-$(date +%s | tail -c 6)" \
+     --unique-dns-name "tm-az104-lab-$(date +%s | tail -c 6)" \
      --ttl 60 \
      --protocol HTTP \
      --port 80 \
      --path "/" \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Store the profile name:
    ```bash
    TM_NAME=$(az network traffic-manager profile list \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --query "[0].name" -o tsv)
    echo "Traffic Manager: $TM_NAME"
    ```
@@ -331,7 +331,7 @@ Before starting the exercises, understand when to use each service:
    az network traffic-manager endpoint create \
      --name "ep-eastus" \
      --profile-name "$TM_NAME" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --type externalEndpoints \
      --target "www.example.com" \
      --endpoint-location "eastus" \
@@ -343,7 +343,7 @@ Before starting the exercises, understand when to use each service:
    az network traffic-manager endpoint create \
      --name "ep-westeurope" \
      --profile-name "$TM_NAME" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --type externalEndpoints \
      --target "www.example.co.uk" \
      --endpoint-location "westeurope" \
@@ -354,7 +354,7 @@ Before starting the exercises, understand when to use each service:
    ```bash
    az network traffic-manager profile show \
      --name "$TM_NAME" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --query "{name:name, dns:dnsConfig.fqdn, routing:trafficRoutingMethod, status:profileStatus, endpoints:endpoints[].{name:name, target:target, location:endpointLocation, status:endpointStatus}}" \
      --output json
    ```
@@ -364,28 +364,28 @@ Before starting the exercises, understand when to use each service:
    # Switch to Weighted routing
    az network traffic-manager profile update \
      --name "$TM_NAME" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --routing-method Weighted
 
    # Set weights on endpoints
    az network traffic-manager endpoint update \
      --name "ep-eastus" \
      --profile-name "$TM_NAME" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --type externalEndpoints \
      --weight 70
 
    az network traffic-manager endpoint update \
      --name "ep-westeurope" \
      --profile-name "$TM_NAME" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --type externalEndpoints \
      --weight 30
 
    # Verify
    az network traffic-manager endpoint list \
      --profile-name "$TM_NAME" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --query "[].{name:name, weight:weight, location:endpointLocation}" -o table
    ```
 
@@ -442,7 +442,7 @@ Before starting the exercises, understand when to use each service:
    # Global tier: Traffic Manager (or Front Door for HTTP)
    az network traffic-manager profile create \
      --name "tm-global-web" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --routing-method Priority \
      --unique-dns-name "tm-global-web-$(date +%s | tail -c 6)" \
      --ttl 30 \
@@ -456,12 +456,12 @@ Before starting the exercises, understand when to use each service:
 
    # Add regional LB public IPs as Traffic Manager endpoints
    LB_IP=$(az network public-ip show --name pip-lb-web \
-     --resource-group rg-certlab-lb --query ipAddress -o tsv 2>/dev/null || echo "20.0.0.1")
+     --resource-group rg-az104-lab-lb --query ipAddress -o tsv 2>/dev/null || echo "20.0.0.1")
 
    az network traffic-manager endpoint create \
      --name "ep-primary-eastus" \
      --profile-name "tm-global-web" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --type externalEndpoints \
      --target "$LB_IP" \
      --endpoint-location "eastus" \
@@ -470,7 +470,7 @@ Before starting the exercises, understand when to use each service:
    az network traffic-manager endpoint create \
      --name "ep-secondary-westeurope" \
      --profile-name "tm-global-web" \
-     --resource-group rg-certlab-lb \
+     --resource-group rg-az104-lab-lb \
      --type externalEndpoints \
      --target "20.0.0.2" \
      --endpoint-location "westeurope" \
@@ -514,18 +514,18 @@ Before starting the exercises, understand when to use each service:
 
 ```bash
 # Remove Traffic Manager profiles
-for tm in $(az network traffic-manager profile list --resource-group rg-certlab-lb --query "[].name" -o tsv); do
-  az network traffic-manager profile delete --name "$tm" --resource-group rg-certlab-lb
+for tm in $(az network traffic-manager profile list --resource-group rg-az104-lab-lb --query "[].name" -o tsv); do
+  az network traffic-manager profile delete --name "$tm" --resource-group rg-az104-lab-lb
 done
 
 # Remove NICs, LB, and public IP
-az network nic delete --name nic-web-vm1 --resource-group rg-certlab-lb --no-wait 2>/dev/null
-az network nic delete --name nic-web-vm2 --resource-group rg-certlab-lb --no-wait 2>/dev/null
-az network lb delete --name lb-web --resource-group rg-certlab-lb 2>/dev/null
-az network public-ip delete --name pip-lb-web --resource-group rg-certlab-lb 2>/dev/null
+az network nic delete --name nic-web-vm1 --resource-group rg-az104-lab-lb --no-wait 2>/dev/null
+az network nic delete --name nic-web-vm2 --resource-group rg-az104-lab-lb --no-wait 2>/dev/null
+az network lb delete --name lb-web --resource-group rg-az104-lab-lb 2>/dev/null
+az network public-ip delete --name pip-lb-web --resource-group rg-az104-lab-lb 2>/dev/null
 
 # Remove resource group
-az group delete --name rg-certlab-lb --yes --no-wait
+az group delete --name rg-az104-lab-lb --yes --no-wait
 
 echo "✅ Load balancing lab resources cleaned up"
 ```

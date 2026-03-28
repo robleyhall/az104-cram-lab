@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# estimate-cost.sh — Estimate running cost of all certlab resources
+# estimate-cost.sh — Estimate running cost of all az104-lab resources
 # Usage: ./scripts/estimate-cost.sh
 # =============================================================================
 set -euo pipefail
@@ -29,9 +29,9 @@ header "AZ-104 Lab Cost Estimate"
 if ! command -v az &>/dev/null; then err "Azure CLI not installed."; exit 1; fi
 if ! az account show &>/dev/null 2>&1; then err "Not logged in. Run 'az login'."; exit 1; fi
 
-RG_LIST=$(az group list --query "[?starts_with(name,'rg-certlab-')].name" -o tsv 2>/dev/null || true)
+RG_LIST=$(az group list --query "[?starts_with(name,'rg-az104-lab-')].name" -o tsv 2>/dev/null || true)
 if [[ -z "$RG_LIST" ]]; then
-    info "No rg-certlab-* resource groups found. Estimated cost: \$0.00"
+    info "No rg-az104-lab-* resource groups found. Estimated cost: \$0.00"
     exit 0
 fi
 

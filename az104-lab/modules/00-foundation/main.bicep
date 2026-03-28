@@ -13,7 +13,7 @@
 param location string = 'eastus'
 
 @description('Environment tag applied to every resource. Useful for cost tracking and policy enforcement — both AZ-104 topics.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 @description('Deterministic unique suffix derived from the resource group ID. Ensures globally unique names without manual input.')
 param uniqueSuffix string = uniqueString(resourceGroup().id)
@@ -28,7 +28,7 @@ var commonTags = {
 }
 
 @description('Hub VNet name following the naming convention: {product}-{module}-{resource}.')
-var hubVnetName = 'vnet-certlab-hub'
+var hubVnetName = 'vnet-az104-lab-hub'
 
 @description('Address space for the hub virtual network. A /16 gives 65,536 addresses — plenty of room for subnets.')
 var hubAddressSpace = '10.0.0.0/16'

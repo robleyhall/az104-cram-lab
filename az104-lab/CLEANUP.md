@@ -12,7 +12,7 @@ The fastest way to remove all lab resources:
 ./scripts/destroy-all.sh
 ```
 
-This script deletes all `rg-certlab-*` resource groups and cleans up Entra ID demo objects.
+This script deletes all `rg-az104-lab-*` resource groups and cleans up Entra ID demo objects.
 
 ---
 
@@ -38,21 +38,21 @@ Examples:
 ### List All Lab Resource Groups
 
 ```bash
-az group list --query "[?starts_with(name, 'rg-certlab')]" -o table
+az group list --query "[?starts_with(name, 'rg-az104-lab')]" -o table
 ```
 
 ### Delete Individual Resource Groups
 
 ```bash
-az group delete --name rg-certlab-monitoring --yes --no-wait
-az group delete --name rg-certlab-compute --yes --no-wait
-az group delete --name rg-certlab-storage --yes --no-wait
-az group delete --name rg-certlab-loadbalancing --yes --no-wait
-az group delete --name rg-certlab-dns --yes --no-wait
-az group delete --name rg-certlab-networking --yes --no-wait
-az group delete --name rg-certlab-governance --yes --no-wait
-az group delete --name rg-certlab-identity --yes --no-wait
-az group delete --name rg-certlab-foundation --yes --no-wait
+az group delete --name rg-az104-lab-monitoring --yes --no-wait
+az group delete --name rg-az104-lab-compute --yes --no-wait
+az group delete --name rg-az104-lab-storage --yes --no-wait
+az group delete --name rg-az104-lab-loadbalancing --yes --no-wait
+az group delete --name rg-az104-lab-dns --yes --no-wait
+az group delete --name rg-az104-lab-networking --yes --no-wait
+az group delete --name rg-az104-lab-governance --yes --no-wait
+az group delete --name rg-az104-lab-identity --yes --no-wait
+az group delete --name rg-az104-lab-foundation --yes --no-wait
 ```
 
 > 💡 Using `--no-wait` allows deletions to run in parallel. Resource group deletion can take 5–15 minutes.
@@ -65,15 +65,15 @@ Delete in **reverse deployment order** to respect dependencies:
 
 | Order | Resource Group | Module |
 |-------|---------------|--------|
-| 1 | rg-certlab-monitoring | 08-monitoring |
-| 2 | rg-certlab-compute | 07-compute |
-| 3 | rg-certlab-storage | 06-storage |
-| 4 | rg-certlab-loadbalancing | 05-load-balancing |
-| 5 | rg-certlab-dns | 04-dns-connectivity |
-| 6 | rg-certlab-networking | 03-networking |
-| 7 | rg-certlab-governance | 02-governance |
-| 8 | rg-certlab-identity | 01-identity |
-| 9 | rg-certlab-foundation | 00-foundation |
+| 1 | rg-az104-lab-monitoring | 08-monitoring |
+| 2 | rg-az104-lab-compute | 07-compute |
+| 3 | rg-az104-lab-storage | 06-storage |
+| 4 | rg-az104-lab-loadbalancing | 05-load-balancing |
+| 5 | rg-az104-lab-dns | 04-dns-connectivity |
+| 6 | rg-az104-lab-networking | 03-networking |
+| 7 | rg-az104-lab-governance | 02-governance |
+| 8 | rg-az104-lab-identity | 01-identity |
+| 9 | rg-az104-lab-foundation | 00-foundation |
 
 ---
 
@@ -83,16 +83,16 @@ After cleanup, verify no lab resources remain:
 
 ```bash
 # Check for remaining resource groups
-az group list --query "[?starts_with(name, 'rg-certlab')]" -o table
+az group list --query "[?starts_with(name, 'rg-az104-lab')]" -o table
 
 # Check for any remaining resources (should return empty)
-az resource list --query "[?contains(name, 'certlab')]" -o table
+az resource list --query "[?contains(name, 'az104-lab')]" -o table
 
 # Check for remaining policy assignments
-az policy assignment list --query "[?contains(displayName, 'certlab')]" -o table
+az policy assignment list --query "[?contains(displayName, 'az104-lab')]" -o table
 
 # Check for remaining role assignments (custom roles)
-az role definition list --custom-role-only true --query "[?contains(roleName, 'certlab')]" -o table
+az role definition list --custom-role-only true --query "[?contains(roleName, 'az104-lab')]" -o table
 ```
 
 If any resources remain, delete them manually or re-run the destroy scripts.
@@ -107,10 +107,10 @@ Demo users and groups created in Module 01 are tenant-level resources and are **
 
 ```bash
 # List demo users
-az ad user list --query "[?startsWith(mailNickname, 'certlab')]" -o table
+az ad user list --query "[?startsWith(mailNickname, 'az104-lab')]" -o table
 
 # Delete demo users
-az ad user list --query "[?startsWith(mailNickname, 'certlab')].id" -o tsv | while read id; do
+az ad user list --query "[?startsWith(mailNickname, 'az104-lab')].id" -o tsv | while read id; do
   az ad user delete --id "$id"
 done
 ```
@@ -130,8 +130,8 @@ done
 ### Remove App Registrations (if any)
 
 ```bash
-az ad app list --query "[?startsWith(displayName, 'certlab')]" -o table
-az ad app list --query "[?startsWith(displayName, 'certlab')].id" -o tsv | while read id; do
+az ad app list --query "[?startsWith(displayName, 'az104-lab')]" -o table
+az ad app list --query "[?startsWith(displayName, 'az104-lab')].id" -o tsv | while read id; do
   az ad app delete --id "$id"
 done
 ```
@@ -148,7 +148,7 @@ Key Vaults are soft-deleted by default and retained for 90 days:
 
 ```bash
 # List soft-deleted vaults
-az keyvault list-deleted --query "[?contains(name, 'certlab')]" -o table
+az keyvault list-deleted --query "[?contains(name, 'az104-lab')]" -o table
 
 # Purge a soft-deleted vault (permanent deletion)
 az keyvault purge --name {vault-name}
@@ -160,17 +160,17 @@ Recovery Services vaults require all backup items to be removed before the vault
 
 ```bash
 # List backup items in the vault
-az backup item list --resource-group rg-certlab-monitoring --vault-name {vault-name} -o table
+az backup item list --resource-group rg-az104-lab-monitoring --vault-name {vault-name} -o table
 
 # Disable and delete backup for each item first
-az backup protection disable --resource-group rg-certlab-monitoring \
+az backup protection disable --resource-group rg-az104-lab-monitoring \
   --vault-name {vault-name} \
   --container-name {container} \
   --item-name {item} \
   --delete-backup-data true --yes
 
 # Then delete the vault
-az backup vault delete --resource-group rg-certlab-monitoring --name {vault-name} --yes
+az backup vault delete --resource-group rg-az104-lab-monitoring --name {vault-name} --yes
 ```
 
 ### Storage Accounts with Soft Delete
@@ -191,22 +191,22 @@ az storage blob service-properties show --account-name {account} --query deleteR
 Run this comprehensive check to confirm everything is cleaned up:
 
 ```bash
-echo "=== Checking for remaining certlab resources ==="
+echo "=== Checking for remaining az104-lab resources ==="
 echo ""
 echo "Resource Groups:"
-az group list --query "[?starts_with(name, 'rg-certlab')].[name]" -o tsv
+az group list --query "[?starts_with(name, 'rg-az104-lab')].[name]" -o tsv
 echo ""
 echo "Entra ID Users:"
-az ad user list --query "[?startsWith(mailNickname, 'certlab')].[displayName]" -o tsv
+az ad user list --query "[?startsWith(mailNickname, 'az104-lab')].[displayName]" -o tsv
 echo ""
 echo "Entra ID Groups:"
 az ad group list --query "[?startsWith(displayName, 'CertLab')].[displayName]" -o tsv
 echo ""
 echo "Soft-deleted Key Vaults:"
-az keyvault list-deleted --query "[?contains(name, 'certlab')].[name]" -o tsv
+az keyvault list-deleted --query "[?contains(name, 'az104-lab')].[name]" -o tsv
 echo ""
 echo "Policy Assignments:"
-az policy assignment list --query "[?contains(displayName, 'certlab')].[displayName]" -o tsv
+az policy assignment list --query "[?contains(displayName, 'az104-lab')].[displayName]" -o tsv
 echo ""
 echo "=== Cleanup verification complete ==="
 ```

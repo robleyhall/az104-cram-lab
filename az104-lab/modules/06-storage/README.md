@@ -28,13 +28,13 @@ After completing this module you will be able to:
 
 | Resource | Name | Purpose |
 |---|---|---|
-| Storage Account (primary) | `stcertlabpri{suffix}` | Main storage — blobs, files, lifecycle management |
-| Blob Container | `certlab-data` | Private container for lab data |
-| Blob Container | `certlab-public` | Blob-level public access (anonymous read demo) |
-| File Share | `certlab-files` | Azure Files share (5 GB, Hot tier) |
+| Storage Account (primary) | `staz104-labpri{suffix}` | Main storage — blobs, files, lifecycle management |
+| Blob Container | `az104-lab-data` | Private container for lab data |
+| Blob Container | `az104-lab-public` | Blob-level public access (anonymous read demo) |
+| File Share | `az104-lab-files` | Azure Files share (5 GB, Hot tier) |
 | Lifecycle Policy | 3 rules | Cool → 30 d, Archive → 90 d, Delete → 365 d |
-| Storage Account (replica) | `stcertlabrep{suffix}` | Object replication destination |
-| Blob Container | `certlab-data-replica` | Replica container |
+| Storage Account (replica) | `staz104-labrep{suffix}` | Object replication destination |
+| Blob Container | `az104-lab-data-replica` | Replica container |
 
 ## 🔄 Storage Redundancy Comparison
 
@@ -79,19 +79,19 @@ After completing this module you will be able to:
 ## Prerequisites
 
 - Azure CLI (v2.60+) with Bicep
-- Resource group from Module 00 (`rg-certlab-eastus`)
+- Resource group from Module 00 (`rg-az104-lab-eastus`)
 - Networking deployed (Module 03) — you need the spoke1/data subnet resource ID
 
 ## 🚀 Deploy
 
 ```bash
 # Set variables
-RG="rg-certlab-eastus"
+RG="rg-az104-lab-eastus"
 
 # Get the data subnet ID from the networking module
 DATA_SUBNET_ID=$(az network vnet subnet show \
   --resource-group "$RG" \
-  --vnet-name vnet-certlab-spoke1 \
+  --vnet-name vnet-az104-lab-spoke1 \
   --name data \
   --query id -o tsv)
 
@@ -113,17 +113,17 @@ az deployment group create \
 ## ✅ Verify Deployment
 
 ```bash
-RG="rg-certlab-eastus"
+RG="rg-az104-lab-eastus"
 
 # List storage accounts
 az storage account list \
   --resource-group "$RG" \
-  --query "[?contains(name,'certlab')].{Name:name, Kind:kind, SKU:sku.name, Tier:accessTier}" \
+  --query "[?contains(name,'az104-lab')].{Name:name, Kind:kind, SKU:sku.name, Tier:accessTier}" \
   -o table
 
 # Get primary account name
 PRIMARY=$(az storage account list --resource-group "$RG" \
-  --query "[?contains(name,'certlabpri')].name" -o tsv)
+  --query "[?contains(name,'az104-labpri')].name" -o tsv)
 
 # Verify blob containers
 az storage container list \
@@ -165,7 +165,7 @@ az storage account show \
 
 ```bash
 PRIMARY=$(az storage account list --resource-group "$RG" \
-  --query "[?contains(name,'certlabpri')].name" -o tsv)
+  --query "[?contains(name,'az104-labpri')].name" -o tsv)
 
 # Generate an account-level SAS token (read/write/list, 1 hour expiry)
 END=$(date -u -d '+1 hour' '+%Y-%m-%dT%H:%MZ' 2>/dev/null \
@@ -183,7 +183,7 @@ az storage account generate-sas \
 # Generate a service-level SAS for a specific container
 az storage container generate-sas \
   --account-name "$PRIMARY" \
-  --name certlab-data \
+  --name az104-lab-data \
   --permissions rl \
   --expiry "$END" \
   --auth-mode key \
@@ -193,7 +193,7 @@ az storage container generate-sas \
 echo "Hello AZ-104" > testblob.txt
 az storage blob upload \
   --account-name "$PRIMARY" \
-  --container-name certlab-data \
+  --container-name az104-lab-data \
   --name testblob.txt \
   --file testblob.txt \
   --auth-mode login
@@ -202,7 +202,7 @@ rm testblob.txt
 # Create a stored access policy (exam topic!)
 az storage container policy create \
   --account-name "$PRIMARY" \
-  --container-name certlab-data \
+  --container-name az104-lab-data \
   --name readpolicy \
   --permissions rl \
   --expiry "$END"
@@ -210,7 +210,7 @@ az storage container policy create \
 # Generate SAS from stored access policy
 az storage container generate-sas \
   --account-name "$PRIMARY" \
-  --name certlab-data \
+  --name az104-lab-data \
   --policy-name readpolicy \
   -o tsv
 ```
@@ -219,9 +219,9 @@ az storage container generate-sas \
 
 ```bash
 PRIMARY=$(az storage account list --resource-group "$RG" \
-  --query "[?contains(name,'certlabpri')].name" -o tsv)
+  --query "[?contains(name,'az104-labpri')].name" -o tsv)
 REPLICA=$(az storage account list --resource-group "$RG" \
-  --query "[?contains(name,'certlabrep')].name" -o tsv)
+  --query "[?contains(name,'az104-labrep')].name" -o tsv)
 
 # Login to AzCopy with Entra ID
 azcopy login
@@ -229,22 +229,22 @@ azcopy login
 # Upload a file to blob storage
 echo "AzCopy demo file" > azcopy-demo.txt
 azcopy copy 'azcopy-demo.txt' \
-  "https://${PRIMARY}.blob.core.windows.net/certlab-data/azcopy-demo.txt"
+  "https://${PRIMARY}.blob.core.windows.net/az104-lab-data/azcopy-demo.txt"
 
 # Copy between storage accounts (server-side copy)
 azcopy copy \
-  "https://${PRIMARY}.blob.core.windows.net/certlab-data/*" \
-  "https://${REPLICA}.blob.core.windows.net/certlab-data-replica/" \
+  "https://${PRIMARY}.blob.core.windows.net/az104-lab-data/*" \
+  "https://${REPLICA}.blob.core.windows.net/az104-lab-data-replica/" \
   --recursive
 
 # Sync a local directory to a container
 mkdir -p sync-demo && echo "file1" > sync-demo/a.txt && echo "file2" > sync-demo/b.txt
 azcopy sync './sync-demo' \
-  "https://${PRIMARY}.blob.core.windows.net/certlab-data/sync-demo" \
+  "https://${PRIMARY}.blob.core.windows.net/az104-lab-data/sync-demo" \
   --recursive
 
 # List blobs in a container
-azcopy list "https://${PRIMARY}.blob.core.windows.net/certlab-data"
+azcopy list "https://${PRIMARY}.blob.core.windows.net/az104-lab-data"
 
 # Clean up local files
 rm -rf azcopy-demo.txt sync-demo
@@ -270,13 +270,13 @@ rm -rf azcopy-demo.txt sync-demo
 ## 🧹 Clean Up
 
 ```bash
-RG="rg-certlab-eastus"
+RG="rg-az104-lab-eastus"
 
 # Delete just the storage accounts (preserve other lab resources)
 PRIMARY=$(az storage account list --resource-group "$RG" \
-  --query "[?contains(name,'certlabpri')].name" -o tsv)
+  --query "[?contains(name,'az104-labpri')].name" -o tsv)
 REPLICA=$(az storage account list --resource-group "$RG" \
-  --query "[?contains(name,'certlabrep')].name" -o tsv)
+  --query "[?contains(name,'az104-labrep')].name" -o tsv)
 
 az storage account delete --name "$PRIMARY" --resource-group "$RG" --yes
 az storage account delete --name "$REPLICA" --resource-group "$RG" --yes

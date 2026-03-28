@@ -33,14 +33,14 @@ After completing this module you will be able to:
 
 | Resource | Name | Type | Key Concepts |
 |----------|------|------|-------------|
-| Linux VM | `vm-certlab-linux1` | Standard_B1s, Ubuntu 22.04 | SSH auth, zone 1, custom script extension |
-| Windows VM | `vm-certlab-win1` | Standard_B2s, Windows Server 2022 | Password auth, availability set |
-| Availability Set | `avset-certlab-win` | 2 FDs, 5 UDs | Rack isolation, update domains |
-| VMSS | `vmss-certlab-web` | Standard_B1s × 2 | Autoscale, rolling upgrade policy |
-| ACR | `acrcertlab{suffix}` | Basic SKU | Container image registry |
-| ACI | `ci-certlab-hello` | 0.5 CPU, 0.5 GB | Serverless container, public IP |
-| App Service Plan | `plan-certlab-web` | B1 Linux | Cheapest plan with slot support |
-| App Service | `app-certlab-web-{suffix}` | Node 18 LTS | HTTPS only, staging slot |
+| Linux VM | `vm-az104-lab-linux1` | Standard_B1s, Ubuntu 22.04 | SSH auth, zone 1, custom script extension |
+| Windows VM | `vm-az104-lab-win1` | Standard_B2s, Windows Server 2022 | Password auth, availability set |
+| Availability Set | `avset-az104-lab-win` | 2 FDs, 5 UDs | Rack isolation, update domains |
+| VMSS | `vmss-az104-lab-web` | Standard_B1s × 2 | Autoscale, rolling upgrade policy |
+| ACR | `acraz104-lab{suffix}` | Basic SKU | Container image registry |
+| ACI | `ci-az104-lab-hello` | 0.5 CPU, 0.5 GB | Serverless container, public IP |
+| App Service Plan | `plan-az104-lab-web` | B1 Linux | Cheapest plan with slot support |
+| App Service | `app-az104-lab-web-{suffix}` | Node 18 LTS | HTTPS only, staging slot |
 
 ## Container Service Comparison
 
@@ -88,7 +88,7 @@ After completing this module you will be able to:
 - **Module 03 (Networking)** must be deployed — this module references spoke1 subnet IDs
 - An SSH key pair for the Linux VM:
   ```bash
-  ssh-keygen -t rsa -b 4096 -f ~/.ssh/az104-certlab -N ""
+  ssh-keygen -t rsa -b 4096 -f ~/.ssh/az104-az104-lab -N ""
   ```
 - Azure CLI with Bicep support:
   ```bash
@@ -101,7 +101,7 @@ After completing this module you will be able to:
 ### 1. Create the resource group
 
 ```bash
-az group create --name rg-certlab-compute --location eastus
+az group create --name rg-az104-lab-compute --location eastus
 ```
 
 ### 2. Get subnet IDs from Module 03
@@ -109,14 +109,14 @@ az group create --name rg-certlab-compute --location eastus
 ```bash
 # Fetch spoke1 subnet IDs (adjust resource group name if different)
 SPOKE1_DEFAULT_SUBNET=$(az network vnet subnet show \
-  --resource-group rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 \
+  --resource-group rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 \
   --name default \
   --query id -o tsv)
 
 SPOKE1_APP_SUBNET=$(az network vnet subnet show \
-  --resource-group rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 \
+  --resource-group rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 \
   --name app \
   --query id -o tsv)
 ```
@@ -125,12 +125,12 @@ SPOKE1_APP_SUBNET=$(az network vnet subnet show \
 
 ```bash
 az deployment group what-if \
-  --resource-group rg-certlab-compute \
+  --resource-group rg-az104-lab-compute \
   --template-file main.bicep \
   --parameters \
     spoke1DefaultSubnetId="$SPOKE1_DEFAULT_SUBNET" \
     spoke1AppSubnetId="$SPOKE1_APP_SUBNET" \
-    adminPublicKey="$(cat ~/.ssh/az104-certlab.pub)" \
+    adminPublicKey="$(cat ~/.ssh/az104-az104-lab.pub)" \
     adminPassword='YourP@ssw0rd!23'
 ```
 
@@ -138,12 +138,12 @@ az deployment group what-if \
 
 ```bash
 az deployment group create \
-  --resource-group rg-certlab-compute \
+  --resource-group rg-az104-lab-compute \
   --template-file main.bicep \
   --parameters \
     spoke1DefaultSubnetId="$SPOKE1_DEFAULT_SUBNET" \
     spoke1AppSubnetId="$SPOKE1_APP_SUBNET" \
-    adminPublicKey="$(cat ~/.ssh/az104-certlab.pub)" \
+    adminPublicKey="$(cat ~/.ssh/az104-az104-lab.pub)" \
     adminPassword='YourP@ssw0rd!23'
 ```
 
@@ -153,36 +153,36 @@ az deployment group create \
 
 ```bash
 # List all resources in the compute resource group
-az resource list --resource-group rg-certlab-compute -o table
+az resource list --resource-group rg-az104-lab-compute -o table
 
 # Check Linux VM status
-az vm show --resource-group rg-certlab-compute --name vm-certlab-linux1 \
+az vm show --resource-group rg-az104-lab-compute --name vm-az104-lab-linux1 \
   --query '{name:name, size:hardwareProfile.vmSize, zone:zones[0], os:storageProfile.osDisk.osType}' -o table
 
 # Check Windows VM and its availability set
-az vm show --resource-group rg-certlab-compute --name vm-certlab-win1 \
+az vm show --resource-group rg-az104-lab-compute --name vm-az104-lab-win1 \
   --query '{name:name, size:hardwareProfile.vmSize, availSet:availabilitySet.id}' -o table
 
 # Check VMSS instances
-az vmss list-instances --resource-group rg-certlab-compute --name vmss-certlab-web -o table
+az vmss list-instances --resource-group rg-az104-lab-compute --name vmss-az104-lab-web -o table
 
 # Verify autoscale settings
-az monitor autoscale show --resource-group rg-certlab-compute --name autoscale-vmss-certlab-web \
+az monitor autoscale show --resource-group rg-az104-lab-compute --name autoscale-vmss-az104-lab-web \
   --query '{min:profiles[0].capacity.minimum, max:profiles[0].capacity.maximum, rules:profiles[0].rules[].metricTrigger.metricName}' -o json
 
 # Check ACR
-az acr show --resource-group rg-certlab-compute --name $(az acr list --resource-group rg-certlab-compute --query '[0].name' -o tsv) --query '{name:name, loginServer:loginServer, sku:sku.name}' -o table
+az acr show --resource-group rg-az104-lab-compute --name $(az acr list --resource-group rg-az104-lab-compute --query '[0].name' -o tsv) --query '{name:name, loginServer:loginServer, sku:sku.name}' -o table
 
 # Check ACI
-az container show --resource-group rg-certlab-compute --name ci-certlab-hello \
+az container show --resource-group rg-az104-lab-compute --name ci-az104-lab-hello \
   --query '{name:name, state:instanceView.state, ip:ipAddress.ip, image:containers[0].image}' -o table
 
 # Check App Service and staging slot
-az webapp show --resource-group rg-certlab-compute --name $(az webapp list --resource-group rg-certlab-compute --query '[0].name' -o tsv) \
+az webapp show --resource-group rg-az104-lab-compute --name $(az webapp list --resource-group rg-az104-lab-compute --query '[0].name' -o tsv) \
   --query '{name:name, state:state, url:defaultHostName}' -o table
 
-az webapp deployment slot list --resource-group rg-certlab-compute \
-  --name $(az webapp list --resource-group rg-certlab-compute --query '[0].name' -o tsv) -o table
+az webapp deployment slot list --resource-group rg-az104-lab-compute \
+  --name $(az webapp list --resource-group rg-az104-lab-compute --query '[0].name' -o tsv) -o table
 ```
 
 ## ARM Template Interpretation Exercise
@@ -211,9 +211,9 @@ The file `sample-arm-template.json` is included for exam-style practice. Try ans
 >
 > **Deallocate VMs when not studying:**
 > ```bash
-> az vm deallocate --resource-group rg-certlab-compute --name vm-certlab-linux1 --no-wait
-> az vm deallocate --resource-group rg-certlab-compute --name vm-certlab-win1 --no-wait
-> az vmss deallocate --resource-group rg-certlab-compute --name vmss-certlab-web --no-wait
+> az vm deallocate --resource-group rg-az104-lab-compute --name vm-az104-lab-linux1 --no-wait
+> az vm deallocate --resource-group rg-az104-lab-compute --name vm-az104-lab-win1 --no-wait
+> az vmss deallocate --resource-group rg-az104-lab-compute --name vmss-az104-lab-web --no-wait
 > ```
 >
 > Auto-shutdown is configured for 10 PM (UTC) as a safety net.
@@ -222,12 +222,12 @@ The file `sample-arm-template.json` is included for exam-style practice. Try ans
 
 ```bash
 # Delete the entire resource group and all resources within it
-az group delete --name rg-certlab-compute --yes --no-wait
+az group delete --name rg-az104-lab-compute --yes --no-wait
 
 # Or deallocate VMs to stop compute billing but keep resources:
-az vm deallocate --resource-group rg-certlab-compute --name vm-certlab-linux1 --no-wait
-az vm deallocate --resource-group rg-certlab-compute --name vm-certlab-win1 --no-wait
-az vmss deallocate --resource-group rg-certlab-compute --name vmss-certlab-web --no-wait
+az vm deallocate --resource-group rg-az104-lab-compute --name vm-az104-lab-linux1 --no-wait
+az vm deallocate --resource-group rg-az104-lab-compute --name vm-az104-lab-win1 --no-wait
+az vmss deallocate --resource-group rg-az104-lab-compute --name vmss-az104-lab-web --no-wait
 ```
 
 ## AZ-104 Exam Tips

@@ -39,7 +39,7 @@ Video: [John Savill's AZ-104 Cram](https://www.youtube.com/watch?v=0Knf9nub4-k)
 | Policy Assignment | `inherit-env-tag-from-rg` | Auto-inherit 'Environment' tag from resource group |
 | Custom RBAC Role | `CertLab VM Operator` | Start/stop/restart VMs — no delete permission |
 | Resource Lock | `lock-rg-do-not-delete` | CanNotDelete lock on the resource group |
-| Budget | `budget-certlab-governance` | $50/month budget with 80% alert threshold |
+| Budget | `budget-az104-lab-governance` | $50/month budget with 80% alert threshold |
 
 ## Prerequisites
 
@@ -60,14 +60,14 @@ az account show       # Confirm correct subscription
 
 ```bash
 # 1. Set variables
-RESOURCE_GROUP="rg-certlab-governance"
+RESOURCE_GROUP="rg-az104-lab-governance"
 LOCATION="eastus"
 
 # 2. Create the resource group with required tags
 az group create \
   --name $RESOURCE_GROUP \
   --location $LOCATION \
-  --tags Environment=certlab Project=az104-lab Module=governance CostCenter=training
+  --tags Environment=az104-lab Project=az104-lab Module=governance CostCenter=training
 
 # 3. Preview the deployment (what-if)
 az deployment group what-if \
@@ -116,7 +116,7 @@ az lock list \
 # ── Budget ──
 # List budgets (scoped to subscription, filter by name)
 az consumption budget list \
-  --query "[?name=='budget-certlab-governance'].{Name:name, Amount:amount, TimeGrain:timeGrain}" \
+  --query "[?name=='budget-az104-lab-governance'].{Name:name, Amount:amount, TimeGrain:timeGrain}" \
   --output table
 
 # ── Tags ──

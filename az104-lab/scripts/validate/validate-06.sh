@@ -8,7 +8,7 @@ set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
-RG_NAME="rg-certlab-storage"
+RG_NAME="rg-az104-lab-storage"
 PASS_COUNT=0; FAIL_COUNT=0; WARN_COUNT=0
 
 pass() { echo -e "  ${GREEN}✅ PASS${NC} — $*"; PASS_COUNT=$((PASS_COUNT + 1)); }

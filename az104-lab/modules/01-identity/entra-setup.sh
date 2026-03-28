@@ -15,7 +15,7 @@
 #
 # Usage:
 #   export DOMAIN_NAME="yourtenant.onmicrosoft.com"
-#   export RESOURCE_GROUP="rg-az104-certlab-identity"
+#   export RESOURCE_GROUP="rg-az104-az104-lab-identity"
 #   bash entra-setup.sh
 # ================================================================
 
@@ -27,7 +27,7 @@ set -euo pipefail
 : "${RESOURCE_GROUP:?'Set RESOURCE_GROUP to the target resource group name'}"
 
 PASSWORD="CertLab@2024!"   # Demo-only — change or randomise for real use
-PREFIX="certlab"
+PREFIX="az104-lab"
 
 # Colours for output
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'

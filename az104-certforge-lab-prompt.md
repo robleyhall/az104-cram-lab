@@ -476,8 +476,8 @@ Follow the CertForge meta-prompt (v1.1) phases 3–7 to generate all files. Key 
 - Include a `sample-arm-template.json` in Module 07 for ARM template interpretation exercises
 - Use `@description` decorators extensively — the code itself is a learning tool
 - Include `what-if` deployment previews in every module's deploy instructions
-- Naming convention: `certlab-{module}-{resource}-{uniqueSuffix}`
-- One resource group per module: `rg-certlab-{module-name}`
+- Naming convention: `az104-lab-{module}-{resource}-{uniqueSuffix}`
+- One resource group per module: `rg-az104-lab-{module-name}`
 
 ### Module Dependencies
 ```

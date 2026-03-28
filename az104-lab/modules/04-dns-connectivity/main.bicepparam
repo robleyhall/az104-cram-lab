@@ -3,13 +3,13 @@ using './main.bicep'
 // Required parameters — replace with outputs from Modules 00 and 03.
 // Run these commands to get the values:
 //
-//   az deployment group show -g rg-certlab-foundation -n main \
+//   az deployment group show -g rg-az104-lab-foundation -n main \
 //     --query properties.outputs.hubVnetId.value -o tsv
 //
-//   az deployment group show -g rg-certlab-networking -n main \
+//   az deployment group show -g rg-az104-lab-networking -n main \
 //     --query properties.outputs.spoke1VnetId.value -o tsv
 //
-//   az deployment group show -g rg-certlab-networking -n main \
+//   az deployment group show -g rg-az104-lab-networking -n main \
 //     --query properties.outputs.spoke1DataSubnetId.value -o tsv
 
 param hubVNetId = '<hub-vnet-resource-id>'

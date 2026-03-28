@@ -8,7 +8,7 @@
 // AZ-104 exam (virtual networking domain).
 //
 // IMPORTANT: Deploy this module into the SAME resource group as Module 03
-// (rg-certlab-networking) because it modifies existing spoke subnets via the
+// (rg-az104-lab-networking) because it modifies existing spoke subnets via the
 // Bicep 'existing' keyword. DNS zones are global and work from any RG.
 // ============================================================================
 
@@ -20,7 +20,7 @@
 param location string = 'eastus'
 
 @description('Environment tag applied to every resource. Useful for cost tracking and policy enforcement — both AZ-104 topics.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 @description('Resource ID of the hub virtual network (output from Module 00). Used for Private DNS VNet link and Bastion subnet derivation.')
 param hubVNetId string
@@ -71,13 +71,13 @@ var spoke1DataSubnetPrefix = '10.1.4.0/24'
 // ============================================================================
 
 @description('''
-Public DNS zone for certlab.example.com. This is a learning zone — it won't resolve
+Public DNS zone for az104-lab.example.com. This is a learning zone — it won't resolve
 publicly unless you own the domain and delegate its NS records to Azure DNS name servers.
 To delegate: create NS records at your registrar pointing to the Azure-assigned name servers
 (see the publicDnsZoneNameServers output).
 ''')
 resource publicDnsZone 'Microsoft.Network/dnsZones@2018-05-01' = {
-  name: 'certlab.example.com'
+  name: 'az104-lab.example.com'
   location: 'global'
   tags: commonTags
   properties: {
@@ -85,7 +85,7 @@ resource publicDnsZone 'Microsoft.Network/dnsZones@2018-05-01' = {
   }
 }
 
-@description('A record: www.certlab.example.com → 10.1.0.4 (example web server IP in Spoke 1).')
+@description('A record: www.az104-lab.example.com → 10.1.0.4 (example web server IP in Spoke 1).')
 resource dnsARecord 'Microsoft.Network/dnsZones/A@2018-05-01' = {
   parent: publicDnsZone
   name: 'www'
@@ -97,14 +97,14 @@ resource dnsARecord 'Microsoft.Network/dnsZones/A@2018-05-01' = {
   }
 }
 
-@description('CNAME record: portal.certlab.example.com → www.certlab.example.com. CNAME creates an alias to another DNS name.')
+@description('CNAME record: portal.az104-lab.example.com → www.az104-lab.example.com. CNAME creates an alias to another DNS name.')
 resource dnsCnameRecord 'Microsoft.Network/dnsZones/CNAME@2018-05-01' = {
   parent: publicDnsZone
   name: 'portal'
   properties: {
     TTL: 3600
     CNAMERecord: {
-      cname: 'www.certlab.example.com'
+      cname: 'www.az104-lab.example.com'
     }
   }
 }
@@ -132,16 +132,16 @@ resource dnsTxtRecord 'Microsoft.Network/dnsZones/TXT@2018-05-01' = {
 
 @description('''
 Private DNS zone for internal name resolution across the hub-spoke topology.
-Resources in linked VNets resolve names like db.certlab.internal to private IPs.
+Resources in linked VNets resolve names like db.az104-lab.internal to private IPs.
 Only ONE VNet link per zone can have auto-registration enabled per VNet.
 ''')
 resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'certlab.internal'
+  name: 'az104-lab.internal'
   location: 'global'
   tags: commonTags
 }
 
-@description('Link Private DNS zone to the hub VNet with auto-registration ENABLED. VMs deployed into the hub VNet automatically get A records created in certlab.internal.')
+@description('Link Private DNS zone to the hub VNet with auto-registration ENABLED. VMs deployed into the hub VNet automatically get A records created in az104-lab.internal.')
 resource privateDnsHubLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
   parent: privateDnsZone
   name: 'link-hub'
@@ -165,7 +165,7 @@ resource privateDnsSpoke1Link 'Microsoft.Network/privateDnsZones/virtualNetworkL
   }
 }
 
-@description('Manual A record: db.certlab.internal → 10.1.2.4 (example database server in Spoke 1 App subnet).')
+@description('Manual A record: db.az104-lab.internal → 10.1.2.4 (example database server in Spoke 1 App subnet).')
 resource privateDnsARecord 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
   parent: privateDnsZone
   name: 'db'
@@ -193,7 +193,7 @@ common enterprise pattern where an NVA inspects all egress traffic.
 disableBgpRoutePropagation: false — allows BGP routes from a VPN gateway to propagate.
 ''')
 resource routeTable 'Microsoft.Network/routeTables@2024-05-01' = {
-  name: 'rt-certlab-spoke1'
+  name: 'rt-az104-lab-spoke1'
   location: location
   tags: commonTags
   properties: {
@@ -225,10 +225,10 @@ resource routeTable 'Microsoft.Network/routeTables@2024-05-01' = {
 //      NSGs, delegations, or other config, include them here too.
 //
 // CLI ALTERNATIVE (works cross-resource-group):
-//   az network vnet subnet update -g rg-certlab-networking \
-//     --vnet-name vnet-certlab-spoke1 -n default --route-table rt-certlab-spoke1
-//   az network vnet subnet update -g rg-certlab-networking \
-//     --vnet-name vnet-certlab-spoke1 -n data --service-endpoints Microsoft.Storage
+//   az network vnet subnet update -g rg-az104-lab-networking \
+//     --vnet-name vnet-az104-lab-spoke1 -n default --route-table rt-az104-lab-spoke1
+//   az network vnet subnet update -g rg-az104-lab-networking \
+//     --vnet-name vnet-az104-lab-spoke1 -n data --service-endpoints Microsoft.Storage
 // ---------------------------------------------------------------------------
 
 @description('Reference to the existing Spoke 1 VNet from Module 03. Must be in the same resource group as this deployment.')
@@ -309,7 +309,7 @@ The privateLinkServiceConnections array specifies the target resource and sub-re
 (groupId). For Blob storage, the groupId is 'blob'.
 ''')
 resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = if (deployPrivateEndpoint && !empty(storageAccountResourceId)) {
-  name: 'pe-certlab-storage'
+  name: 'pe-az104-lab-storage'
   location: location
   tags: commonTags
   properties: {
@@ -318,7 +318,7 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = if (d
     }
     privateLinkServiceConnections: [
       {
-        name: 'psc-certlab-storage'
+        name: 'psc-az104-lab-storage'
         properties: {
           privateLinkServiceId: storageAccountResourceId
           groupIds: [
@@ -358,7 +358,7 @@ resource privateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZ
 
 @description('Standard SKU static public IP for Azure Bastion. Bastion requires a Standard SKU public IP with static allocation.')
 resource bastionPublicIp 'Microsoft.Network/publicIPAddresses@2024-05-01' = if (deployBastion) {
-  name: 'pip-certlab-bastion'
+  name: 'pip-az104-lab-bastion'
   location: location
   tags: commonTags
   sku: {
@@ -380,7 +380,7 @@ Developer SKU is cheaper but has limited region availability via Bicep.
 needed for VM access, then delete to save costs.
 ''')
 resource bastion 'Microsoft.Network/bastionHosts@2023-11-01' = if (deployBastion) {
-  name: 'bastion-certlab'
+  name: 'bastion-az104-lab'
   location: location
   tags: commonTags
   sku: {
@@ -409,7 +409,7 @@ output publicDnsZoneId string = publicDnsZone.id
 @description('Azure-assigned name servers for the public DNS zone. Delegate your domain to these NS records to make it resolvable.')
 output publicDnsZoneNameServers array = publicDnsZone.properties.nameServers
 
-@description('Resource ID of the private DNS zone (certlab.internal).')
+@description('Resource ID of the private DNS zone (az104-lab.internal).')
 output privateDnsZoneId string = privateDnsZone.id
 
 @description('Resource ID of the route table. Use this to verify effective routes on NICs in the associated subnet.')

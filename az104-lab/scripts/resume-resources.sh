@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# resume-resources.sh — Start all deallocated VMs/VMSS/AKS in certlab RGs
+# resume-resources.sh — Start all deallocated VMs/VMSS/AKS in az104-lab RGs
 # Usage: ./scripts/resume-resources.sh [--yes] [--wait]
 # =============================================================================
 set -euo pipefail
@@ -24,7 +24,7 @@ for arg in "$@"; do
         --wait|-w) WAIT_FOR_START=true ;;
         --help|-h)
             echo "Usage: $0 [--yes] [--wait]"
-            echo "Starts all deallocated VMs, VMSS, and AKS in rg-certlab-* resource groups."
+            echo "Starts all deallocated VMs, VMSS, and AKS in rg-az104-lab-* resource groups."
             echo ""
             echo "Options:"
             echo "  --yes   Skip confirmation prompt"
@@ -38,9 +38,9 @@ header "Resume AZ-104 Lab Resources"
 if ! command -v az &>/dev/null; then err "Azure CLI not installed."; exit 1; fi
 if ! az account show &>/dev/null 2>&1; then err "Not logged in. Run 'az login'."; exit 1; fi
 
-RG_LIST=$(az group list --query "[?starts_with(name,'rg-certlab-')].name" -o tsv 2>/dev/null || true)
+RG_LIST=$(az group list --query "[?starts_with(name,'rg-az104-lab-')].name" -o tsv 2>/dev/null || true)
 if [[ -z "$RG_LIST" ]]; then
-    info "No rg-certlab-* resource groups found."
+    info "No rg-az104-lab-* resource groups found."
     exit 0
 fi
 

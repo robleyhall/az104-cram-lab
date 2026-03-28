@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# pause-resources.sh — Deallocate/stop costly resources in certlab RGs
+# pause-resources.sh — Deallocate/stop costly resources in az104-lab RGs
 # Usage: ./scripts/pause-resources.sh [--yes]
 # =============================================================================
 set -euo pipefail
@@ -21,7 +21,7 @@ for arg in "$@"; do
         --yes|-y) AUTO_CONFIRM=true ;;
         --help|-h)
             echo "Usage: $0 [--yes]"
-            echo "Deallocates VMs, stops VMSS, stops AKS in all rg-certlab-* resource groups."
+            echo "Deallocates VMs, stops VMSS, stops AKS in all rg-az104-lab-* resource groups."
             exit 0 ;;
     esac
 done
@@ -31,10 +31,10 @@ header "Pause AZ-104 Lab Resources"
 if ! command -v az &>/dev/null; then err "Azure CLI not installed."; exit 1; fi
 if ! az account show &>/dev/null 2>&1; then err "Not logged in. Run 'az login'."; exit 1; fi
 
-# Gather all certlab resource groups
-RG_LIST=$(az group list --query "[?starts_with(name,'rg-certlab-')].name" -o tsv 2>/dev/null || true)
+# Gather all az104-lab resource groups
+RG_LIST=$(az group list --query "[?starts_with(name,'rg-az104-lab-')].name" -o tsv 2>/dev/null || true)
 if [[ -z "$RG_LIST" ]]; then
-    info "No rg-certlab-* resource groups found."
+    info "No rg-az104-lab-* resource groups found."
     exit 0
 fi
 

@@ -15,13 +15,13 @@
 - Module 00 (Foundation) and Module 03 (Networking) exercises completed (or create equivalent VNets)
 
 ```bash
-az group create --name rg-certlab-dns --location eastus \
-  --tags Environment=certlab Module=dns-connectivity
+az group create --name rg-az104-lab-dns --location eastus \
+  --tags Environment=az104-lab Module=dns-connectivity
 
 # Create a VNet if not already available
 az network vnet create \
   --name vnet-dns-lab \
-  --resource-group rg-certlab-dns \
+  --resource-group rg-az104-lab-dns \
   --address-prefix 10.10.0.0/16 \
   --subnet-name snet-default \
   --subnet-prefix 10.10.0.0/24
@@ -45,26 +45,26 @@ az network vnet create \
 1. Create a DNS zone (use a custom domain or a test domain):
    ```bash
    # Use a domain you own, or a lab domain for practice
-   DNS_ZONE="certlab.example.com"
+   DNS_ZONE="az104-lab.example.com"
 
    az network dns zone create \
      --name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
-     --tags Environment=certlab
+     --resource-group rg-az104-lab-dns \
+     --tags Environment=az104-lab
    ```
 
 2. Add an A record pointing to a web server:
    ```bash
    az network dns record-set a add-record \
      --zone-name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --record-set-name "www" \
      --ipv4-address 10.10.0.10
 
    # Set TTL to 300 seconds
    az network dns record-set a update \
      --zone-name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --name "www" \
      --set ttl=300
    ```
@@ -73,7 +73,7 @@ az network vnet create \
    ```bash
    az network dns record-set cname set-record \
      --zone-name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --record-set-name "blog" \
      --cname "www.${DNS_ZONE}"
    ```
@@ -82,7 +82,7 @@ az network vnet create \
    ```bash
    az network dns record-set txt add-record \
      --zone-name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --record-set-name "@" \
      --value "v=spf1 include:_spf.example.com ~all"
    ```
@@ -91,7 +91,7 @@ az network vnet create \
    ```bash
    az network dns record-set mx add-record \
      --zone-name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --record-set-name "@" \
      --exchange "mail.${DNS_ZONE}" \
      --preference 10
@@ -101,7 +101,7 @@ az network vnet create \
    ```bash
    az network dns record-set list \
      --zone-name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --query "[].{name:name, type:type, ttl:ttl}" --output table
    ```
 
@@ -109,7 +109,7 @@ az network vnet create \
    ```bash
    az network dns zone show \
      --name "$DNS_ZONE" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --query "nameServers" --output tsv
    ```
 
@@ -140,17 +140,17 @@ az network vnet create \
 1. Create a Private DNS zone:
    ```bash
    az network private-dns zone create \
-     --name "certlab.internal" \
-     --resource-group rg-certlab-dns \
-     --tags Environment=certlab
+     --name "az104-lab.internal" \
+     --resource-group rg-az104-lab-dns \
+     --tags Environment=az104-lab
    ```
 
 2. Link the zone to the VNet with auto-registration:
    ```bash
    az network private-dns link vnet create \
      --name "link-dns-lab" \
-     --resource-group rg-certlab-dns \
-     --zone-name "certlab.internal" \
+     --resource-group rg-az104-lab-dns \
+     --zone-name "az104-lab.internal" \
      --virtual-network vnet-dns-lab \
      --registration-enabled true
    ```
@@ -158,8 +158,8 @@ az network vnet create \
 3. Add a manual A record for a service:
    ```bash
    az network private-dns record-set a add-record \
-     --zone-name "certlab.internal" \
-     --resource-group rg-certlab-dns \
+     --zone-name "az104-lab.internal" \
+     --resource-group rg-az104-lab-dns \
      --record-set-name "db" \
      --ipv4-address 10.10.0.50
    ```
@@ -168,15 +168,15 @@ az network vnet create \
    ```bash
    echo "=== VNet Links ==="
    az network private-dns link vnet list \
-     --zone-name "certlab.internal" \
-     --resource-group rg-certlab-dns \
+     --zone-name "az104-lab.internal" \
+     --resource-group rg-az104-lab-dns \
      --query "[].{name:name, vnet:virtualNetwork.id, registration:registrationEnabled}" \
      --output table
 
    echo "=== DNS Records ==="
    az network private-dns record-set list \
-     --zone-name "certlab.internal" \
-     --resource-group rg-certlab-dns \
+     --zone-name "az104-lab.internal" \
+     --resource-group rg-az104-lab-dns \
      --query "[].{name:name, type:type, ttl:ttl}" --output table
    ```
 
@@ -186,16 +186,16 @@ az network vnet create \
    # but can have multiple read-only links
    az network private-dns link vnet create \
      --name "link-readonly" \
-     --resource-group rg-certlab-dns \
-     --zone-name "certlab.internal" \
-     --virtual-network "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-certlab-networking/providers/Microsoft.Network/virtualNetworks/vnet-hub" \
+     --resource-group rg-az104-lab-dns \
+     --zone-name "az104-lab.internal" \
+     --virtual-network "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-az104-lab-networking/providers/Microsoft.Network/virtualNetworks/vnet-hub" \
      --registration-enabled false 2>/dev/null || echo "ℹ️ Hub VNet not found — skip this step if Module 03 is not deployed"
    ```
 
 **Success Criteria**:
-- [ ] Private DNS zone `certlab.internal` is created
+- [ ] Private DNS zone `az104-lab.internal` is created
 - [ ] Zone is linked to VNet with auto-registration enabled
-- [ ] Manual A record resolves `db.certlab.internal` to 10.10.0.50
+- [ ] Manual A record resolves `db.az104-lab.internal` to 10.10.0.50
 - [ ] You understand that auto-registration creates A records automatically when VMs are created in the linked VNet
 
 > 💡 **Exam Tip**: Private DNS zones support **auto-registration** — VMs created in a linked VNet automatically get an A record. Key limits: a VNet can link to only **one Private DNS zone with auto-registration** enabled, but can link to up to 1000 zones for resolution. The exam tests these limits.
@@ -219,9 +219,9 @@ az network vnet create \
    ```bash
    az network route-table create \
      --name rt-spoke-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --disable-bgp-route-propagation false \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Add a route to send all traffic through a virtual appliance (NVA):
@@ -229,7 +229,7 @@ az network vnet create \
    az network route-table route create \
      --name route-to-nva \
      --route-table-name rt-spoke-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --address-prefix 0.0.0.0/0 \
      --next-hop-type VirtualAppliance \
      --next-hop-ip-address 10.0.0.4
@@ -240,7 +240,7 @@ az network vnet create \
    az network route-table route create \
      --name route-to-onprem \
      --route-table-name rt-spoke-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --address-prefix 192.168.0.0/16 \
      --next-hop-type VirtualNetworkGateway
    ```
@@ -250,7 +250,7 @@ az network vnet create \
    az network route-table route create \
      --name route-blackhole \
      --route-table-name rt-spoke-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --address-prefix 172.16.0.0/12 \
      --next-hop-type None
    ```
@@ -259,7 +259,7 @@ az network vnet create \
    ```bash
    az network route-table route list \
      --route-table-name rt-spoke-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --query "[].{name:name, prefix:addressPrefix, nextHop:nextHopType, nextHopIP:nextHopIpAddress}" \
      --output table
    ```
@@ -268,7 +268,7 @@ az network vnet create \
    ```bash
    az network vnet subnet update \
      --name snet-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --vnet-name vnet-dns-lab \
      --route-table rt-spoke-default
    ```
@@ -278,14 +278,14 @@ az network vnet create \
    # Create a test NIC
    az network nic create \
      --name nic-route-test \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --vnet-name vnet-dns-lab \
      --subnet snet-default
 
    # View effective routes
    az network nic show-effective-route-table \
      --name nic-route-test \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --query "value[].{source:source, prefix:addressPrefix[0], nextHop:nextHopType, nextHopIP:nextHopIpAddress[0]}" \
      --output table
    ```
@@ -324,7 +324,7 @@ az network vnet create \
    ```bash
    az network vnet subnet update \
      --name snet-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --vnet-name vnet-dns-lab \
      --service-endpoints Microsoft.Storage
    ```
@@ -334,10 +334,10 @@ az network vnet create \
    STORAGE_NAME="stdns$(date +%s | tail -c 9)"
    az storage account create \
      --name "$STORAGE_NAME" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --sku Standard_LRS \
      --location eastus \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    echo "Storage account: $STORAGE_NAME"
    ```
 
@@ -346,19 +346,19 @@ az network vnet create \
    # Set default action to Deny
    az storage account update \
      --name "$STORAGE_NAME" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --default-action Deny
 
    # Add VNet rule
    SUBNET_ID=$(az network vnet subnet show \
      --name snet-default \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --vnet-name vnet-dns-lab \
      --query id -o tsv)
 
    az storage account network-rule add \
      --account-name "$STORAGE_NAME" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --subnet "$SUBNET_ID"
    ```
 
@@ -366,7 +366,7 @@ az network vnet create \
    ```bash
    az storage account show \
      --name "$STORAGE_NAME" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --query "{defaultAction:networkRuleSet.defaultAction, vnets:networkRuleSet.virtualNetworkRules[].{subnet:virtualNetworkResourceId, action:action}}" \
      --output json
    ```
@@ -411,7 +411,7 @@ az network vnet create \
    ```bash
    az network vnet subnet create \
      --name snet-private-endpoints \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --vnet-name vnet-dns-lab \
      --address-prefix 10.10.1.0/24
    ```
@@ -419,11 +419,11 @@ az network vnet create \
 2. Create a private endpoint for the storage account:
    ```bash
    STORAGE_ID=$(az storage account show --name "$STORAGE_NAME" \
-     --resource-group rg-certlab-dns --query id -o tsv)
+     --resource-group rg-az104-lab-dns --query id -o tsv)
 
    az network private-endpoint create \
      --name "pe-${STORAGE_NAME}" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --vnet-name vnet-dns-lab \
      --subnet snet-private-endpoints \
      --private-connection-resource-id "$STORAGE_ID" \
@@ -435,7 +435,7 @@ az network vnet create \
    ```bash
    az network private-endpoint show \
      --name "pe-${STORAGE_NAME}" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --query "customDnsConfigs[].{fqdn:fqdn, ipAddresses:ipAddresses}" \
      --output json
    ```
@@ -444,11 +444,11 @@ az network vnet create \
    ```bash
    az network private-dns zone create \
      --name "privatelink.blob.core.windows.net" \
-     --resource-group rg-certlab-dns
+     --resource-group rg-az104-lab-dns
 
    az network private-dns link vnet create \
      --name "link-blob-dns" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --zone-name "privatelink.blob.core.windows.net" \
      --virtual-network vnet-dns-lab \
      --registration-enabled false
@@ -459,7 +459,7 @@ az network vnet create \
    az network private-endpoint dns-zone-group create \
      --name "default" \
      --endpoint-name "pe-${STORAGE_NAME}" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --private-dns-zone "privatelink.blob.core.windows.net" \
      --zone-name "blob"
    ```
@@ -468,7 +468,7 @@ az network vnet create \
    ```bash
    az network private-dns record-set list \
      --zone-name "privatelink.blob.core.windows.net" \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --query "[?type=='Microsoft.Network/privateDnsZones/A'].{name:name, ip:aRecords[0].ipv4Address}" \
      --output table
    ```
@@ -526,7 +526,7 @@ az network vnet create \
 
    | Component | Location | Purpose |
    |-----------|----------|---------|
-   | Private DNS Zone | `rg-certlab-dns` | Store private endpoint A records |
+   | Private DNS Zone | `rg-az104-lab-dns` | Store private endpoint A records |
    | VNet Link (spoke1) | Linked to `vnet-spoke1` | Allow spoke1 VMs to resolve |
    | VNet Link (hub) | Linked to `vnet-hub` | Allow hub services to resolve |
    | DNS Private Resolver | Hub VNet, dedicated subnet | Forward on-prem queries to Azure DNS |
@@ -537,25 +537,25 @@ az network vnet create \
    # Create a subnet for the resolver (minimum /28)
    az network vnet subnet create \
      --name snet-dns-resolver-inbound \
-     --resource-group rg-certlab-dns \
+     --resource-group rg-az104-lab-dns \
      --vnet-name vnet-dns-lab \
      --address-prefix 10.10.2.0/28 \
      --delegations "Microsoft.Network/dnsResolvers"
 
    # Create the resolver
    az dns-resolver create \
-     --name "dnspr-certlab" \
-     --resource-group rg-certlab-dns \
+     --name "dnspr-az104-lab" \
+     --resource-group rg-az104-lab-dns \
      --location eastus \
-     --id "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-certlab-dns/providers/Microsoft.Network/virtualNetworks/vnet-dns-lab"
+     --id "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-az104-lab-dns/providers/Microsoft.Network/virtualNetworks/vnet-dns-lab"
 
    # Create inbound endpoint
    az dns-resolver inbound-endpoint create \
      --name "inbound-endpoint" \
-     --dns-resolver-name "dnspr-certlab" \
-     --resource-group rg-certlab-dns \
+     --dns-resolver-name "dnspr-az104-lab" \
+     --resource-group rg-az104-lab-dns \
      --location eastus \
-     --ip-configurations "[{\"private-ip-allocation-method\":\"Dynamic\",\"id\":\"/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-certlab-dns/providers/Microsoft.Network/virtualNetworks/vnet-dns-lab/subnets/snet-dns-resolver-inbound\"}]"
+     --ip-configurations "[{\"private-ip-allocation-method\":\"Dynamic\",\"id\":\"/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-az104-lab-dns/providers/Microsoft.Network/virtualNetworks/vnet-dns-lab/subnets/snet-dns-resolver-inbound\"}]"
    ```
 
 4. **Design Questions** (answer these):
@@ -585,35 +585,35 @@ az network vnet create \
 ```bash
 # Remove private endpoint and DNS zone group
 az network private-endpoint delete --name "pe-${STORAGE_NAME}" \
-  --resource-group rg-certlab-dns --no-wait 2>/dev/null
+  --resource-group rg-az104-lab-dns --no-wait 2>/dev/null
 
 # Remove DNS resolver (if created)
 az dns-resolver inbound-endpoint delete --name "inbound-endpoint" \
-  --dns-resolver-name "dnspr-certlab" --resource-group rg-certlab-dns --yes 2>/dev/null
-az dns-resolver delete --name "dnspr-certlab" \
-  --resource-group rg-certlab-dns --yes 2>/dev/null
+  --dns-resolver-name "dnspr-az104-lab" --resource-group rg-az104-lab-dns --yes 2>/dev/null
+az dns-resolver delete --name "dnspr-az104-lab" \
+  --resource-group rg-az104-lab-dns --yes 2>/dev/null
 
 # Remove private DNS zones and links
 az network private-dns link vnet delete --name "link-blob-dns" \
-  --zone-name "privatelink.blob.core.windows.net" --resource-group rg-certlab-dns --yes 2>/dev/null
+  --zone-name "privatelink.blob.core.windows.net" --resource-group rg-az104-lab-dns --yes 2>/dev/null
 az network private-dns link vnet delete --name "link-dns-lab" \
-  --zone-name "certlab.internal" --resource-group rg-certlab-dns --yes 2>/dev/null
+  --zone-name "az104-lab.internal" --resource-group rg-az104-lab-dns --yes 2>/dev/null
 az network private-dns link vnet delete --name "link-readonly" \
-  --zone-name "certlab.internal" --resource-group rg-certlab-dns --yes 2>/dev/null
+  --zone-name "az104-lab.internal" --resource-group rg-az104-lab-dns --yes 2>/dev/null
 az network private-dns zone delete --name "privatelink.blob.core.windows.net" \
-  --resource-group rg-certlab-dns --yes 2>/dev/null
-az network private-dns zone delete --name "certlab.internal" \
-  --resource-group rg-certlab-dns --yes 2>/dev/null
+  --resource-group rg-az104-lab-dns --yes 2>/dev/null
+az network private-dns zone delete --name "az104-lab.internal" \
+  --resource-group rg-az104-lab-dns --yes 2>/dev/null
 
 # Remove public DNS zone
-az network dns zone delete --name "$DNS_ZONE" --resource-group rg-certlab-dns --yes 2>/dev/null
+az network dns zone delete --name "$DNS_ZONE" --resource-group rg-az104-lab-dns --yes 2>/dev/null
 
 # Remove NICs and route tables
-az network nic delete --name nic-route-test --resource-group rg-certlab-dns 2>/dev/null
-az network route-table delete --name rt-spoke-default --resource-group rg-certlab-dns 2>/dev/null
+az network nic delete --name nic-route-test --resource-group rg-az104-lab-dns 2>/dev/null
+az network route-table delete --name rt-spoke-default --resource-group rg-az104-lab-dns 2>/dev/null
 
 # Remove resource group
-az group delete --name rg-certlab-dns --yes --no-wait
+az group delete --name rg-az104-lab-dns --yes --no-wait
 
 echo "✅ DNS & connectivity lab resources cleaned up"
 ```

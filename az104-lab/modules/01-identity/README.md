@@ -70,16 +70,16 @@ After completing this module you will be able to:
 
 ```bash
 az group create \
-  --name rg-az104-certlab-identity \
+  --name rg-az104-az104-lab-identity \
   --location eastus \
-  --tags Environment=certlab Project=az104-lab Module=identity
+  --tags Environment=az104-lab Project=az104-lab Module=identity
 ```
 
 ### Step 2 — Run the Entra ID setup script
 
 ```bash
 export DOMAIN_NAME="yourtenant.onmicrosoft.com"   # ← change this
-export RESOURCE_GROUP="rg-az104-certlab-identity"
+export RESOURCE_GROUP="rg-az104-az104-lab-identity"
 
 bash entra-setup.sh
 ```
@@ -90,7 +90,7 @@ The script prints the group principal IDs at the end. Copy them into `main.bicep
 
 ```bash
 az deployment group create \
-  --resource-group rg-az104-certlab-identity \
+  --resource-group rg-az104-az104-lab-identity \
   --template-file main.bicep \
   --parameters main.bicepparam
 ```
@@ -109,12 +109,12 @@ az ad user list \
 
 # List lab groups
 az ad group list \
-  --filter "startswith(displayName,'certlab')" \
+  --filter "startswith(displayName,'az104-lab')" \
   --query "[].{Name:displayName, Id:id}" -o table
 
 # Check group membership
 az ad group member list \
-  --group "certlab-admins" \
+  --group "az104-lab-admins" \
   --query "[].{Name:displayName, Id:id}" -o table
 ```
 
@@ -123,7 +123,7 @@ az ad group member list \
 ```bash
 # List role assignments on the resource group
 az role assignment list \
-  --resource-group rg-az104-certlab-identity \
+  --resource-group rg-az104-az104-lab-identity \
   --query "[].{Principal:principalName, Role:roleDefinitionName, Scope:scope}" -o table
 ```
 
@@ -132,8 +132,8 @@ az role assignment list \
 ```bash
 # Show the managed identity
 az identity show \
-  --resource-group rg-az104-certlab-identity \
-  --name az104-certlab-identity-uami \
+  --resource-group rg-az104-az104-lab-identity \
+  --name az104-az104-lab-identity-uami \
   --query "{Name:name, PrincipalId:principalId, ClientId:clientId}" -o table
 ```
 
@@ -145,7 +145,7 @@ az identity show \
 
 ```bash
 export DOMAIN_NAME="yourtenant.onmicrosoft.com"
-export RESOURCE_GROUP="rg-az104-certlab-identity"
+export RESOURCE_GROUP="rg-az104-az104-lab-identity"
 
 bash entra-setup.sh cleanup
 ```
@@ -153,7 +153,7 @@ bash entra-setup.sh cleanup
 ### Remove Azure resources
 
 ```bash
-az group delete --name rg-az104-certlab-identity --yes --no-wait
+az group delete --name rg-az104-az104-lab-identity --yes --no-wait
 ```
 
 ---

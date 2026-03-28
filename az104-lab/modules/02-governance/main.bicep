@@ -20,7 +20,7 @@ param location string = 'eastus'
 param contactEmail string
 
 @description('Environment label applied as a tag to all resources. Also used by the tag-inheritance policy to propagate from resource group to child resources.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 @description('Monthly spending limit in USD for the budget alert. The AZ-104 exam tests cost management concepts including budgets, cost alerts, and spending thresholds.')
 param monthlyBudgetAmount int = 50
@@ -139,7 +139,7 @@ state for cost control without the ability to permanently destroy resources.
 Assignable at the current subscription scope.
 ''')
 resource customRoleVmOperator 'Microsoft.Authorization/roleDefinitions@2022-04-01' = {
-  name: guid(subscriptionId, 'certlab-vm-operator')
+  name: guid(subscriptionId, 'az104-lab-vm-operator')
   properties: {
     roleName: 'CertLab VM Operator'
     description: 'Can start, stop (deallocate), and restart virtual machines but cannot delete them. Designed for operators who manage VM power state for cost optimization.'

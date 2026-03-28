@@ -9,8 +9,8 @@
 @description('Azure region for all resources. Maps to AZ-104 skill: choose appropriate region for network resources.')
 param location string = 'eastus'
 
-@description('''Resource ID of the hub VNet deployed by Module 00 (rg-certlab-foundation).
-Example: /subscriptions/{sub-id}/resourceGroups/rg-certlab-foundation/providers/Microsoft.Network/virtualNetworks/vnet-certlab-hub
+@description('''Resource ID of the hub VNet deployed by Module 00 (rg-az104-lab-foundation).
+Example: /subscriptions/{sub-id}/resourceGroups/rg-az104-lab-foundation/providers/Microsoft.Network/virtualNetworks/vnet-az104-lab-hub
 Used for VNet peering — demonstrates cross-resource-group references.''')
 param hubVNetResourceId string
 
@@ -20,7 +20,7 @@ AZ-104 skill: configure NSG rules with specific source/destination scoping.''')
 param allowedSourceIP string = '*'
 
 @description('Environment identifier used in resource tags for governance and cost tracking.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 // ─── Variables ───────────────────────────────────────────────────────────────
 
@@ -40,21 +40,21 @@ var hubVNetName = last(split(hubVNetResourceId, '/'))
 
 @description('ASG for web-tier VMs — referenced as a source in the app-tier NSG rule.')
 resource asgWeb 'Microsoft.Network/applicationSecurityGroups@2024-01-01' = {
-  name: 'asg-certlab-web'
+  name: 'asg-az104-lab-web'
   location: location
   tags: tags
 }
 
 @description('ASG for application-tier VMs.')
 resource asgApp 'Microsoft.Network/applicationSecurityGroups@2024-01-01' = {
-  name: 'asg-certlab-app'
+  name: 'asg-az104-lab-app'
   location: location
   tags: tags
 }
 
 @description('ASG for data-tier VMs — can be used in future NSG rules to restrict database access.')
 resource asgData 'Microsoft.Network/applicationSecurityGroups@2024-01-01' = {
-  name: 'asg-certlab-data'
+  name: 'asg-az104-lab-data'
   location: location
   tags: tags
 }
@@ -68,7 +68,7 @@ resource asgData 'Microsoft.Network/applicationSecurityGroups@2024-01-01' = {
 Rules: AllowHTTP (80), AllowHTTPS (443), AllowSSH (22, source-scoped), DenyAllInbound.
 The explicit DenyAll at priority 4096 makes the deny visible in effective security rules.''')
 resource nsgWeb 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
-  name: 'nsg-certlab-web'
+  name: 'nsg-az104-lab-web'
   location: location
   tags: tags
   properties: {
@@ -134,10 +134,10 @@ resource nsgWeb 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
 }
 
 @description('''NSG for the app tier (attached to spoke1/app subnet).
-Uses an ASG as the source — only traffic originating from asg-certlab-web is allowed on port 8080.
+Uses an ASG as the source — only traffic originating from asg-az104-lab-web is allowed on port 8080.
 Demonstrates ASG-based rules: a core AZ-104 concept.''')
 resource nsgApp 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
-  name: 'nsg-certlab-app'
+  name: 'nsg-az104-lab-app'
   location: location
   tags: tags
   properties: {
@@ -184,12 +184,12 @@ resource nsgApp 'Microsoft.Network/networkSecurityGroups@2024-01-01' = {
 // AZ-104 skills: create VNets, configure subnets, associate NSGs to subnets.
 
 @description('''Spoke VNet 1 — primary workload network with three subnets.
-- default (10.1.0.0/24): web tier, protected by nsg-certlab-web
-- app     (10.1.1.0/24): app tier, protected by nsg-certlab-app
+- default (10.1.0.0/24): web tier, protected by nsg-az104-lab-web
+- app     (10.1.1.0/24): app tier, protected by nsg-az104-lab-app
 - data    (10.1.2.0/24): data tier, no NSG (add one as an exercise)
 NSG-to-subnet association is configured inline — a common AZ-104 pattern.''')
 resource vnetSpoke1 'Microsoft.Network/virtualNetworks@2024-01-01' = {
-  name: 'vnet-certlab-spoke1'
+  name: 'vnet-az104-lab-spoke1'
   location: location
   tags: tags
   properties: {
@@ -232,7 +232,7 @@ resource vnetSpoke1 'Microsoft.Network/virtualNetworks@2024-01-01' = {
 - app     (10.2.1.0/24): application workloads
 No NSGs attached — available for exercises on NSG association.''')
 resource vnetSpoke2 'Microsoft.Network/virtualNetworks@2024-01-01' = {
-  name: 'vnet-certlab-spoke2'
+  name: 'vnet-az104-lab-spoke2'
   location: location
   tags: tags
   properties: {
@@ -261,7 +261,7 @@ resource vnetSpoke2 'Microsoft.Network/virtualNetworks@2024-01-01' = {
 // ─── VNet Peering (spoke → hub) ──────────────────────────────────────────────
 // Peering is non-transitive and must be created on BOTH sides.
 // This template creates the spoke→hub direction only.
-// The hub→spoke direction must be created separately in rg-certlab-foundation
+// The hub→spoke direction must be created separately in rg-az104-lab-foundation
 // because the hub VNet lives in a different resource group.
 // See README.md for the CLI commands to complete hub-side peering.
 //
@@ -308,7 +308,7 @@ resource peeringSpoke2ToHub 'Microsoft.Network/virtualNetworks/virtualNetworkPee
 Standard SKU is zone-redundant by default and required for Standard Load Balancer.
 AZ-104 skill: create and configure public IP addresses, understand SKU differences.''')
 resource pipWeb 'Microsoft.Network/publicIPAddresses@2024-01-01' = {
-  name: 'pip-certlab-web'
+  name: 'pip-az104-lab-web'
   location: location
   tags: tags
   sku: {

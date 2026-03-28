@@ -52,7 +52,7 @@ done
 [[ -z "$MODULE_NAME" ]] && { err "Module name is required."; usage; }
 
 MODULE_SHORT="${MODULE_NAME#[0-9][0-9]-}"
-RG_NAME="rg-certlab-${MODULE_SHORT}"
+RG_NAME="rg-az104-lab-${MODULE_SHORT}"
 
 # --- Validate ---
 header "Destroy Module: $MODULE_NAME"

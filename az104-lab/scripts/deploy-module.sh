@@ -61,7 +61,7 @@ done
 # --- Derive names ---
 # Strip leading number prefix for resource group name (e.g., 03-networking → networking)
 MODULE_SHORT="${MODULE_NAME#[0-9][0-9]-}"
-RG_NAME="rg-certlab-${MODULE_SHORT}"
+RG_NAME="rg-az104-lab-${MODULE_SHORT}"
 MODULE_DIR="$MODULES_DIR/$MODULE_NAME"
 
 # --- Validate ---
@@ -107,7 +107,7 @@ if az group show --name "$RG_NAME" &>/dev/null 2>&1; then
 else
     info "Creating resource group '$RG_NAME' in '$REGION'..."
     az group create --name "$RG_NAME" --location "$REGION" \
-        --tags Environment=certlab Project=az104-lab Module="$MODULE_SHORT" \
+        --tags Environment=az104-lab Project=az104-lab Module="$MODULE_SHORT" \
         -o none
     ok "Resource group '$RG_NAME' created."
 fi

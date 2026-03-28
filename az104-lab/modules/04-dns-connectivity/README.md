@@ -39,18 +39,18 @@ These timestamps map to [John Savill's AZ-104 Cram v2](https://www.youtube.com/w
 
 | Resource | Name | Purpose |
 |----------|------|---------|
-| Public DNS Zone | `certlab.example.com` | Azure DNS with A, CNAME, TXT records |
-| Private DNS Zone | `certlab.internal` | Internal name resolution across VNets |
+| Public DNS Zone | `az104-lab.example.com` | Azure DNS with A, CNAME, TXT records |
+| Private DNS Zone | `az104-lab.internal` | Internal name resolution across VNets |
 | Private DNS VNet Link | `link-hub` | Hub VNet link (auto-registration enabled) |
 | Private DNS VNet Link | `link-spoke1` | Spoke 1 VNet link (auto-registration disabled) |
-| Route Table | `rt-certlab-spoke1` | UDR forcing internet traffic → NVA (10.0.3.4) |
+| Route Table | `rt-az104-lab-spoke1` | UDR forcing internet traffic → NVA (10.0.3.4) |
 | Service Endpoint | Microsoft.Storage | On spoke1/data subnet for storage access |
 | Private DNS Zone | `privatelink.blob.core.windows.net` | DNS for storage private endpoint *(conditional)* |
-| Private Endpoint | `pe-certlab-storage` | Private connectivity to storage blob *(conditional)* |
-| Public IP | `pip-certlab-bastion` | Standard SKU static IP for Bastion *(conditional)* |
-| Azure Bastion | `bastion-certlab` | Secure RDP/SSH without VM public IPs *(conditional)* |
+| Private Endpoint | `pe-az104-lab-storage` | Private connectivity to storage blob *(conditional)* |
+| Public IP | `pip-az104-lab-bastion` | Standard SKU static IP for Bastion *(conditional)* |
+| Azure Bastion | `bastion-az104-lab` | Secure RDP/SSH without VM public IPs *(conditional)* |
 
-All resources tagged: `Environment=certlab`, `Project=az104-lab`, `Module=dns-connectivity`.
+All resources tagged: `Environment=az104-lab`, `Project=az104-lab`, `Module=dns-connectivity`.
 
 ## Prerequisites
 
@@ -71,31 +71,31 @@ Collect outputs from prerequisite modules:
 ```bash
 # Hub VNet ID (from Module 00)
 HUB_VNET_ID=$(az deployment group show \
-  --resource-group rg-certlab-foundation \
+  --resource-group rg-az104-lab-foundation \
   --name main \
   --query properties.outputs.hubVnetId.value -o tsv)
 
 # Spoke 1 VNet ID (from Module 03)
 SPOKE1_VNET_ID=$(az deployment group show \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --name main \
   --query properties.outputs.spoke1VnetId.value -o tsv)
 
 # Spoke 1 Data Subnet ID (from Module 03)
 SPOKE1_DATA_SUBNET_ID=$(az deployment group show \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --name main \
   --query properties.outputs.spoke1DataSubnetId.value -o tsv)
 ```
 
 ## Deploy
 
-> ⚠️ **This module deploys into `rg-certlab-networking`** (same RG as Module 03) because it modifies existing spoke subnets with route table and service endpoint associations.
+> ⚠️ **This module deploys into `rg-az104-lab-networking`** (same RG as Module 03) because it modifies existing spoke subnets with route table and service endpoint associations.
 
 ```bash
 # 1. Preview changes (always do this first!)
 az deployment group create \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file main.bicep \
   --parameters \
     hubVNetId="$HUB_VNET_ID" \
@@ -106,7 +106,7 @@ az deployment group create \
 
 # 2. Deploy (without Bastion to save costs)
 az deployment group create \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file main.bicep \
   --parameters \
     hubVNetId="$HUB_VNET_ID" \
@@ -116,7 +116,7 @@ az deployment group create \
 
 # 3. Deploy Bastion only when you need VM access
 az deployment group create \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file main.bicep \
   --parameters \
     hubVNetId="$HUB_VNET_ID" \
@@ -129,12 +129,12 @@ az deployment group create \
 
 ```bash
 STORAGE_ID=$(az deployment group show \
-  --resource-group rg-certlab-storage \
+  --resource-group rg-az104-lab-storage \
   --name main \
   --query properties.outputs.storageAccountId.value -o tsv)
 
 az deployment group create \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file main.bicep \
   --parameters \
     hubVNetId="$HUB_VNET_ID" \
@@ -149,56 +149,56 @@ az deployment group create \
 ```bash
 # --- Public DNS Zone ---
 az network dns zone show \
-  --resource-group rg-certlab-networking \
-  --name certlab.example.com \
+  --resource-group rg-az104-lab-networking \
+  --name az104-lab.example.com \
   --query '{name:name, nameServers:nameServers}' -o json
 
 az network dns record-set list \
-  --resource-group rg-certlab-networking \
-  --zone-name certlab.example.com \
+  --resource-group rg-az104-lab-networking \
+  --zone-name az104-lab.example.com \
   --output table
 
 # --- Private DNS Zone ---
 az network private-dns zone show \
-  --resource-group rg-certlab-networking \
-  --name certlab.internal \
+  --resource-group rg-az104-lab-networking \
+  --name az104-lab.internal \
   --output table
 
 az network private-dns link vnet list \
-  --resource-group rg-certlab-networking \
-  --zone-name certlab.internal \
+  --resource-group rg-az104-lab-networking \
+  --zone-name az104-lab.internal \
   --output table
 
 az network private-dns record-set a list \
-  --resource-group rg-certlab-networking \
-  --zone-name certlab.internal \
+  --resource-group rg-az104-lab-networking \
+  --zone-name az104-lab.internal \
   --output table
 
 # --- Route Table & Effective Routes ---
 az network route-table show \
-  --resource-group rg-certlab-networking \
-  --name rt-certlab-spoke1 \
+  --resource-group rg-az104-lab-networking \
+  --name rt-az104-lab-spoke1 \
   --query '{name:name, routes:routes[].{name:name, prefix:addressPrefix, nextHop:nextHopType, nextHopIp:nextHopIpAddress}}' \
   -o json
 
 # Check effective routes on a NIC in the spoke1/default subnet
-# az network nic show-effective-route-table -g rg-certlab-networking -n <nic-name> -o table
+# az network nic show-effective-route-table -g rg-az104-lab-networking -n <nic-name> -o table
 
 # --- Service Endpoint ---
 az network vnet subnet show \
-  --resource-group rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 \
+  --resource-group rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 \
   --name data \
   --query '{name:name, serviceEndpoints:serviceEndpoints[].service}' -o json
 
 # --- Bastion ---
 az network bastion list \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --output table
 
 # --- Private Endpoint (if deployed) ---
 az network private-endpoint list \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --output table
 ```
 
@@ -273,36 +273,36 @@ Watch the cram video sections linked above to cover these conceptually.
 ```bash
 # Delete Bastion first (highest cost)
 az network bastion delete \
-  --resource-group rg-certlab-networking \
-  --name bastion-certlab \
+  --resource-group rg-az104-lab-networking \
+  --name bastion-az104-lab \
   --no-wait
 
 az network public-ip delete \
-  --resource-group rg-certlab-networking \
-  --name pip-certlab-bastion
+  --resource-group rg-az104-lab-networking \
+  --name pip-az104-lab-bastion
 
 # Delete private endpoint (if deployed)
 az network private-endpoint delete \
-  --resource-group rg-certlab-networking \
-  --name pe-certlab-storage
+  --resource-group rg-az104-lab-networking \
+  --name pe-az104-lab-storage
 
 # Delete DNS zones
 az network dns zone delete \
-  --resource-group rg-certlab-networking \
-  --name certlab.example.com --yes
+  --resource-group rg-az104-lab-networking \
+  --name az104-lab.example.com --yes
 
 az network private-dns zone delete \
-  --resource-group rg-certlab-networking \
-  --name certlab.internal --yes
+  --resource-group rg-az104-lab-networking \
+  --name az104-lab.internal --yes
 
 az network private-dns zone delete \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --name privatelink.blob.core.windows.net --yes
 
 # Delete route table
 az network route-table delete \
-  --resource-group rg-certlab-networking \
-  --name rt-certlab-spoke1
+  --resource-group rg-az104-lab-networking \
+  --name rt-az104-lab-spoke1
 
 # Or delete everything by redeploying Module 03 without Module 04 resources
 ```

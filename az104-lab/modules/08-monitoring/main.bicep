@@ -24,7 +24,7 @@ Leave empty to skip the VM CPU metric alert.
 param vmResourceId string = ''
 
 @description('Environment tag applied to every resource. Useful for cost tracking and policy enforcement — both AZ-104 topics.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 // --- Variables ---
 
@@ -36,16 +36,16 @@ var commonTags = {
 }
 
 @description('Log Analytics workspace name. Central sink for logs from VMs, storage accounts, NSGs, and Azure AD.')
-var workspaceName = 'law-certlab-monitor'
+var workspaceName = 'law-az104-lab-monitor'
 
 @description('Action group name. Action groups decouple "who to notify" from "what to alert on".')
-var actionGroupName = 'ag-certlab-alerts'
+var actionGroupName = 'ag-az104-lab-alerts'
 
 @description('Recovery Services vault name. Manages backup and (optionally) Site Recovery for VMs.')
-var vaultName = 'rsv-certlab-backup'
+var vaultName = 'rsv-az104-lab-backup'
 
 @description('Backup policy name. Defines schedule and retention — exam frequently tests retention rules.')
-var backupPolicyName = 'policy-certlab-vm-daily'
+var backupPolicyName = 'policy-az104-lab-vm-daily'
 
 // --- Log Analytics Workspace ---
 
@@ -123,7 +123,7 @@ resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
   location: 'global' // Action groups are always global
   tags: commonTags
   properties: {
-    groupShortName: 'certlabalrt'
+    groupShortName: 'az104-labalrt'
     enabled: true
     emailReceivers: [
       {
@@ -147,7 +147,7 @@ AZ-104 key concepts:
 Conditionally deployed only when vmResourceId is provided.
 ''')
 resource vmCpuAlert 'Microsoft.Insights/metricAlerts@2018-03-01' = if (!empty(vmResourceId)) {
-  name: 'alert-certlab-vm-cpu'
+  name: 'alert-az104-lab-vm-cpu'
   location: 'global' // Metric alerts are always global
   tags: commonTags
   properties: {
@@ -197,7 +197,7 @@ installed and are sending Heartbeat data to this workspace. Without agents, the
 query returns no results and the alert remains inactive.
 ''')
 resource heartbeatAlert 'Microsoft.Insights/scheduledQueryRules@2023-03-15-preview' = {
-  name: 'alert-certlab-heartbeat'
+  name: 'alert-az104-lab-heartbeat'
   location: location
   tags: commonTags
   properties: {

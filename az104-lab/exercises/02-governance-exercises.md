@@ -13,11 +13,11 @@
 - An active Azure subscription with **Owner** role
 - Azure CLI v2.60+ authenticated (`az login`)
 - Module 00 (Foundation) deployed
-- A resource group to experiment with: `rg-certlab-governance`
+- A resource group to experiment with: `rg-az104-lab-governance`
 
 ```bash
-az group create --name rg-certlab-governance --location eastus \
-  --tags Environment=certlab Module=governance
+az group create --name rg-az104-lab-governance --location eastus \
+  --tags Environment=az104-lab Module=governance
 ```
 
 ---
@@ -55,14 +55,14 @@ az group create --name rg-certlab-governance --location eastus \
      --name "audit-env-tag" \
      --display-name "Audit: Resources must have Environment tag" \
      --policy "$POLICY_DEF" \
-     --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-certlab-governance" \
-     --params '{"tagName": {"value": "Environment"}, "tagValue": {"value": "certlab"}}'
+     --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-az104-lab-governance" \
+     --params '{"tagName": {"value": "Environment"}, "tagValue": {"value": "az104-lab"}}'
    ```
 
 4. Check compliance (may take 5–15 minutes for initial evaluation):
    ```bash
    az policy state summarize \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --query "results.{compliant:resourceDetails[?complianceState=='Compliant'].count | [0], nonCompliant:resourceDetails[?complianceState=='NonCompliant'].count | [0]}"
    ```
 
@@ -70,7 +70,7 @@ az group create --name rg-certlab-governance --location eastus \
    ```bash
    az storage account create \
      --name "stgov$(date +%s | tail -c 9)" \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --sku Standard_LRS \
      --location eastus
    # This should succeed with Audit (logged but not blocked)
@@ -79,7 +79,7 @@ az group create --name rg-certlab-governance --location eastus \
 6. Now update the assignment to **Deny** and test again:
    ```bash
    az policy assignment delete --name "audit-env-tag" \
-     --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-certlab-governance"
+     --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-az104-lab-governance"
 
    # Use the "Require a tag on resources" definition with Deny
    DENY_POLICY=$(az policy definition list \
@@ -89,7 +89,7 @@ az group create --name rg-certlab-governance --location eastus \
      --name "deny-env-tag" \
      --display-name "Deny: Resources must have Environment tag" \
      --policy "$DENY_POLICY" \
-     --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-certlab-governance" \
+     --scope "/subscriptions/$(az account show --query id -o tsv)/resourceGroups/rg-az104-lab-governance" \
      --params '{"tagName": {"value": "Environment"}}' \
      --enforcement-mode Default
    ```
@@ -99,17 +99,17 @@ az group create --name rg-certlab-governance --location eastus \
    # This should FAIL because no Environment tag is provided
    az storage account create \
      --name "stgov$(date +%s | tail -c 9)" \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --sku Standard_LRS \
      --location eastus
 
    # This should SUCCEED because the tag is included
    az storage account create \
      --name "stgov$(date +%s | tail -c 9)" \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --sku Standard_LRS \
      --location eastus \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 **Success Criteria**:
@@ -145,20 +145,20 @@ az group create --name rg-certlab-governance --location eastus \
    ```bash
    az lock create \
      --name "no-delete-rg" \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --lock-type CanNotDelete \
      --notes "Prevent accidental deletion of governance lab resources"
    ```
 
 2. Try to delete the resource group (should fail):
    ```bash
-   az group delete --name rg-certlab-governance --yes 2>&1 || echo "⛔ Delete blocked by lock!"
+   az group delete --name rg-az104-lab-governance --yes 2>&1 || echo "⛔ Delete blocked by lock!"
    ```
 
 3. Verify you can still modify resources (Delete lock allows modifications):
    ```bash
-   az group update --name rg-certlab-governance \
-     --tags Environment=certlab Module=governance Updated=true
+   az group update --name rg-az104-lab-governance \
+     --tags Environment=az104-lab Module=governance Updated=true
    echo "✅ Modification succeeded — Delete lock only prevents deletion"
    ```
 
@@ -166,26 +166,26 @@ az group create --name rg-certlab-governance --location eastus \
    ```bash
    az lock create \
      --name "readonly-rg" \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --lock-type ReadOnly \
      --notes "Prevent any modifications to governance lab resources"
    ```
 
 5. Try to modify the resource group (should fail):
    ```bash
-   az group update --name rg-certlab-governance \
-     --tags Environment=certlab Module=governance Updated=false 2>&1 \
+   az group update --name rg-az104-lab-governance \
+     --tags Environment=az104-lab Module=governance Updated=false 2>&1 \
      || echo "⛔ Modification blocked by ReadOnly lock!"
    ```
 
 6. List all locks:
    ```bash
-   az lock list --resource-group rg-certlab-governance --output table
+   az lock list --resource-group rg-az104-lab-governance --output table
    ```
 
 7. Remove the ReadOnly lock (keep the Delete lock for now):
    ```bash
-   az lock delete --name "readonly-rg" --resource-group rg-certlab-governance
+   az lock delete --name "readonly-rg" --resource-group rg-az104-lab-governance
    ```
 
 **Success Criteria**:
@@ -259,13 +259,13 @@ az group create --name rg-certlab-governance --location eastus \
    az role assignment create \
      --assignee "labuser1@${DOMAIN}" \
      --role "VM Operator" \
-     --scope "/subscriptions/$SUB_ID/resourceGroups/rg-certlab-governance"
+     --scope "/subscriptions/$SUB_ID/resourceGroups/rg-az104-lab-governance"
    ```
 
 6. Verify the assignment:
    ```bash
    az role assignment list \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --query "[?roleDefinitionName=='VM Operator'].{principal:principalName, role:roleDefinitionName, scope:scope}" \
      --output table
    ```
@@ -297,7 +297,7 @@ az group create --name rg-certlab-governance --location eastus \
 1. View current costs for the resource group:
    ```bash
    az consumption usage list \
-     --query "[?contains(instanceName,'certlab')].{resource:instanceName, cost:pretaxCost, currency:currency}" \
+     --query "[?contains(instanceName,'az104-lab')].{resource:instanceName, cost:pretaxCost, currency:currency}" \
      --output table 2>/dev/null || echo "ℹ️ No cost data yet (may take 24h to populate)"
    ```
 
@@ -306,12 +306,12 @@ az group create --name rg-certlab-governance --location eastus \
    SUB_ID=$(az account show --query id -o tsv)
    START_DATE=$(date -u +"%Y-%m-01T00:00:00Z")
    az consumption budget create \
-     --budget-name "certlab-monthly" \
+     --budget-name "az104-lab-monthly" \
      --amount 50 \
      --category Cost \
      --time-grain Monthly \
      --start-date "$START_DATE" \
-     --resource-group rg-certlab-governance
+     --resource-group rg-az104-lab-governance
    ```
 
 3. If the CLI budget command is not available, use ARM REST API:
@@ -320,7 +320,7 @@ az group create --name rg-certlab-governance --location eastus \
    START_DATE=$(date -u +"%Y-%m-01T00:00:00Z")
 
    az rest --method put \
-     --url "https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/rg-certlab-governance/providers/Microsoft.Consumption/budgets/certlab-monthly?api-version=2023-11-01" \
+     --url "https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/rg-az104-lab-governance/providers/Microsoft.Consumption/budgets/az104-lab-monthly?api-version=2023-11-01" \
      --body "{
        \"properties\": {
          \"category\": \"Cost\",
@@ -356,12 +356,12 @@ az group create --name rg-certlab-governance --location eastus \
 4. Verify the budget was created:
    ```bash
    az rest --method get \
-     --url "https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/rg-certlab-governance/providers/Microsoft.Consumption/budgets?api-version=2023-11-01" \
+     --url "https://management.azure.com/subscriptions/$SUB_ID/resourceGroups/rg-az104-lab-governance/providers/Microsoft.Consumption/budgets?api-version=2023-11-01" \
      --query "value[].{name:name, amount:properties.amount, grain:properties.timeGrain}"
    ```
 
 **Success Criteria**:
-- [ ] Budget "certlab-monthly" exists with $50 limit
+- [ ] Budget "az104-lab-monthly" exists with $50 limit
 - [ ] Three alert thresholds configured (50%, 80%, 100%)
 - [ ] You can explain the difference between budgets (alerts only) and spending limits (hard stops)
 
@@ -385,7 +385,7 @@ az group create --name rg-certlab-governance --location eastus \
 1. List ALL role assignments on the resource group:
    ```bash
    az role assignment list \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --include-inherited \
      --output table
    ```
@@ -393,7 +393,7 @@ az group create --name rg-certlab-governance --location eastus \
 2. For each assignment, identify the source scope:
    ```bash
    az role assignment list \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --include-inherited \
      --query "[].{principal:principalName, role:roleDefinitionName, scope:scope, type:principalType}" \
      --output table
@@ -415,14 +415,14 @@ az group create --name rg-certlab-governance --location eastus \
 
    echo "=== Assignments inherited from subscription ==="
    az role assignment list \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --include-inherited \
      --query "[?contains(scope,'subscriptions') && !contains(scope,'resourceGroups')]" \
      --output table
 
    echo "=== Assignments at resource group level ==="
    az role assignment list \
-     --resource-group rg-certlab-governance \
+     --resource-group rg-az104-lab-governance \
      --query "[?contains(scope,'resourceGroups')]" \
      --output table
    ```
@@ -598,19 +598,19 @@ Prevention Analysis:
    az policy assignment create \
      --name "enforce-naming-gov" \
      --policy "enforce-naming" \
-     --scope "/subscriptions/$SUB_ID/resourceGroups/rg-certlab-governance"
+     --scope "/subscriptions/$SUB_ID/resourceGroups/rg-az104-lab-governance"
    ```
 
 4. Test the policy:
    ```bash
    # Should FAIL — name doesn't start with an approved prefix
    az network nsg create --name "my-bad-nsg" \
-     --resource-group rg-certlab-governance 2>&1 || echo "⛔ Blocked by naming policy!"
+     --resource-group rg-az104-lab-governance 2>&1 || echo "⛔ Blocked by naming policy!"
 
    # Should SUCCEED — name starts with "nsg-"
-   az network nsg create --name "nsg-certlab-test" \
-     --resource-group rg-certlab-governance \
-     --tags Environment=certlab
+   az network nsg create --name "nsg-az104-lab-test" \
+     --resource-group rg-az104-lab-governance \
+     --tags Environment=az104-lab
    ```
 
 5. **Challenge extension**: Modify the policy to use **Audit** instead of **Deny** and add a parameter for the allowed prefixes so it's reusable across different resource types.
@@ -633,11 +633,11 @@ Prevention Analysis:
 # Remove policy assignments
 SUB_ID=$(az account show --query id -o tsv)
 az policy assignment delete --name "audit-env-tag" \
-  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-certlab-governance" 2>/dev/null
+  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-az104-lab-governance" 2>/dev/null
 az policy assignment delete --name "deny-env-tag" \
-  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-certlab-governance" 2>/dev/null
+  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-az104-lab-governance" 2>/dev/null
 az policy assignment delete --name "enforce-naming-gov" \
-  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-certlab-governance" 2>/dev/null
+  --scope "/subscriptions/$SUB_ID/resourceGroups/rg-az104-lab-governance" 2>/dev/null
 az policy assignment delete --name "require-env-tag" \
   --scope "/providers/Microsoft.Management/managementGroups/org-contoso" 2>/dev/null
 
@@ -648,8 +648,8 @@ az policy definition delete --name "enforce-naming" 2>/dev/null
 az role definition delete --name "VM Operator" 2>/dev/null
 
 # Remove locks (must remove locks before deleting RG)
-az lock delete --name "no-delete-rg" --resource-group rg-certlab-governance 2>/dev/null
-az lock delete --name "readonly-rg" --resource-group rg-certlab-governance 2>/dev/null
+az lock delete --name "no-delete-rg" --resource-group rg-az104-lab-governance 2>/dev/null
+az lock delete --name "readonly-rg" --resource-group rg-az104-lab-governance 2>/dev/null
 
 # Remove management groups (children first)
 az account management-group delete --name "mg-retail" 2>/dev/null
@@ -657,7 +657,7 @@ az account management-group delete --name "mg-corporate" 2>/dev/null
 az account management-group delete --name "org-contoso" 2>/dev/null
 
 # Remove resource group
-az group delete --name rg-certlab-governance --yes --no-wait
+az group delete --name rg-az104-lab-governance --yes --no-wait
 
 # Clean up local files
 rm -f vm-operator-role.json naming-policy.json

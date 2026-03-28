@@ -17,8 +17,8 @@
 - Module 00 (Foundation) deployed
 
 ```bash
-az group create --name rg-certlab-compute --location eastus \
-  --tags Environment=certlab Module=compute
+az group create --name rg-az104-lab-compute --location eastus \
+  --tags Environment=az104-lab Module=compute
 ```
 
 ---
@@ -40,7 +40,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az network vnet create \
      --name vnet-compute \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --address-prefix 10.30.0.0/16 \
      --subnet-name snet-vms \
      --subnet-prefix 10.30.0.0/24
@@ -50,18 +50,18 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az network nsg create \
      --name nsg-vms \
-     --resource-group rg-certlab-compute
+     --resource-group rg-az104-lab-compute
 
    az network nsg rule create \
      --nsg-name nsg-vms \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --name AllowSSH \
      --priority 100 --direction Inbound --access Allow \
      --protocol Tcp --destination-port-ranges 22 \
      --source-address-prefixes "$(curl -s https://ifconfig.me)/32"
 
    az network vnet subnet update \
-     --name snet-vms --resource-group rg-certlab-compute \
+     --name snet-vms --resource-group rg-az104-lab-compute \
      --vnet-name vnet-compute --network-security-group nsg-vms
    ```
 
@@ -69,7 +69,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az vm create \
      --name vm-web-01 \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --image Ubuntu2204 \
      --size Standard_B1s \
      --admin-username azurelab \
@@ -79,26 +79,26 @@ az group create --name rg-certlab-compute --location eastus \
      --subnet snet-vms \
      --public-ip-sku Standard \
      --nsg "" \
-     --tags Environment=certlab Role=web
+     --tags Environment=az104-lab Role=web
    ```
 
 4. Get the VM's public IP and SSH into it:
    ```bash
-   VM_IP=$(az vm show --name vm-web-01 --resource-group rg-certlab-compute \
+   VM_IP=$(az vm show --name vm-web-01 --resource-group rg-az104-lab-compute \
      --show-details --query publicIps -o tsv)
    echo "SSH command: ssh azurelab@${VM_IP}"
    ```
 
 5. Examine the VM's components:
    ```bash
-   az vm show --name vm-web-01 --resource-group rg-certlab-compute \
+   az vm show --name vm-web-01 --resource-group rg-az104-lab-compute \
      --query "{name:name, size:hardwareProfile.vmSize, zone:zones[0], osType:storageProfile.osDisk.osType, osDiskType:storageProfile.osDisk.managedDisk.storageAccountType}" \
      --output json
    ```
 
 6. List all resources created for the VM:
    ```bash
-   az resource list --resource-group rg-certlab-compute \
+   az resource list --resource-group rg-az104-lab-compute \
      --query "[].{name:name, type:type}" --output table
    ```
 
@@ -169,7 +169,7 @@ az group create --name rg-certlab-compute --location eastus \
            "supportsHttpsTrafficOnly": true
          },
          "tags": {
-           "Environment": "certlab",
+           "Environment": "az104-lab",
            "DeployedBy": "ARM"
          }
        }
@@ -198,7 +198,7 @@ az group create --name rg-certlab-compute --location eastus \
 3. Validate the template:
    ```bash
    az deployment group validate \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --template-file sample-arm-template.json \
      --parameters storageAccountName="starm$(date +%s | tail -c 9)"
    ```
@@ -207,7 +207,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    ARM_STORAGE="starm$(date +%s | tail -c 9)"
    az deployment group create \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --template-file sample-arm-template.json \
      --parameters storageAccountName="$ARM_STORAGE" \
      --what-if
@@ -216,7 +216,7 @@ az group create --name rg-certlab-compute --location eastus \
 5. Deploy the template:
    ```bash
    az deployment group create \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --template-file sample-arm-template.json \
      --parameters storageAccountName="$ARM_STORAGE" \
      --query "properties.outputs"
@@ -294,7 +294,7 @@ az group create --name rg-certlab-compute --location eastus \
        supportsHttpsTrafficOnly: true
      }
      tags: {
-       Environment: 'certlab'
+       Environment: 'az104-lab'
        DeployedBy: 'Bicep'
      }
    }
@@ -322,7 +322,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    BICEP_STORAGE="stbicep$(date +%s | tail -c 9)"
    az deployment group create \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --template-file modified-template.bicep \
      --parameters storageAccountName="$BICEP_STORAGE" containerName="lab-data" \
      --query "properties.outputs"
@@ -355,7 +355,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az vmss create \
      --name vmss-web \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --image Ubuntu2204 \
      --vm-sku Standard_B1s \
      --instance-count 2 \
@@ -364,14 +364,14 @@ az group create --name rg-certlab-compute --location eastus \
      --upgrade-policy-mode Automatic \
      --vnet-name vnet-compute \
      --subnet snet-vms \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. View the VMSS instances:
    ```bash
    az vmss list-instances \
      --name vmss-web \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --query "[].{id:instanceId, state:provisioningState}" --output table
    ```
 
@@ -379,7 +379,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az monitor autoscale create \
      --name autoscale-vmss-web \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --resource vmss-web \
      --resource-type Microsoft.Compute/virtualMachineScaleSets \
      --min-count 2 \
@@ -391,7 +391,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az monitor autoscale rule create \
      --autoscale-name autoscale-vmss-web \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --condition "Percentage CPU > 75 avg 5m" \
      --scale out 1
    ```
@@ -400,7 +400,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az monitor autoscale rule create \
      --autoscale-name autoscale-vmss-web \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --condition "Percentage CPU < 25 avg 5m" \
      --scale in 1
    ```
@@ -409,15 +409,15 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az monitor autoscale show \
      --name autoscale-vmss-web \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --query "{min:profiles[0].capacity.minimum, max:profiles[0].capacity.maximum, rules:profiles[0].rules[].{metric:metricTrigger.metricName, threshold:metricTrigger.threshold, direction:scaleAction.direction}}" \
      --output json
    ```
 
 7. Manually scale to test:
    ```bash
-   az vmss scale --name vmss-web --resource-group rg-certlab-compute --new-capacity 3
-   az vmss list-instances --name vmss-web --resource-group rg-certlab-compute \
+   az vmss scale --name vmss-web --resource-group rg-az104-lab-compute --new-capacity 3
+   az vmss list-instances --name vmss-web --resource-group rg-az104-lab-compute \
      --query "[].instanceId" -o tsv
    ```
 
@@ -455,34 +455,34 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az container create \
      --name aci-hello \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --image mcr.microsoft.com/azuredocs/aci-helloworld:latest \
-     --dns-name-label "aci-certlab-$(date +%s | tail -c 6)" \
+     --dns-name-label "aci-az104-lab-$(date +%s | tail -c 6)" \
      --ports 80 \
      --cpu 0.5 \
      --memory 0.5 \
      --os-type Linux \
      --restart-policy OnFailure \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Check container status:
    ```bash
    az container show \
      --name aci-hello \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --query "{name:name, state:instanceView.state, fqdn:ipAddress.fqdn, ip:ipAddress.ip, ports:ipAddress.ports[].port}" \
      --output json
    ```
 
 3. View container logs:
    ```bash
-   az container logs --name aci-hello --resource-group rg-certlab-compute
+   az container logs --name aci-hello --resource-group rg-az104-lab-compute
    ```
 
 4. Test the container (if it has a public FQDN):
    ```bash
-   FQDN=$(az container show --name aci-hello --resource-group rg-certlab-compute \
+   FQDN=$(az container show --name aci-hello --resource-group rg-az104-lab-compute \
      --query "ipAddress.fqdn" -o tsv)
    curl -s "http://${FQDN}" | head -5
    ```
@@ -491,7 +491,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az container show \
      --name aci-hello \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --query "containers[0].instanceView.events[].{type:type, message:message}" \
      --output table
    ```
@@ -527,22 +527,22 @@ az group create --name rg-certlab-compute --location eastus \
 1. Create an App Service plan:
    ```bash
    az appservice plan create \
-     --name plan-certlab \
-     --resource-group rg-certlab-compute \
+     --name plan-az104-lab \
+     --resource-group rg-az104-lab-compute \
      --sku S1 \
      --is-linux \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Create a web app:
    ```bash
-   APP_NAME="app-certlab-$(date +%s | tail -c 8)"
+   APP_NAME="app-az104-lab-$(date +%s | tail -c 8)"
    az webapp create \
      --name "$APP_NAME" \
-     --resource-group rg-certlab-compute \
-     --plan plan-certlab \
+     --resource-group rg-az104-lab-compute \
+     --plan plan-az104-lab \
      --runtime "NODE:18-lts" \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    echo "Web app: $APP_NAME"
    ```
 
@@ -550,7 +550,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az webapp deployment slot create \
      --name "$APP_NAME" \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --slot staging
    ```
 
@@ -558,7 +558,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az webapp config appsettings set \
      --name "$APP_NAME" \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --slot staging \
      --settings ENVIRONMENT=staging VERSION=2.0
    ```
@@ -568,13 +568,13 @@ az group create --name rg-certlab-compute --location eastus \
    echo "=== Production Settings ==="
    az webapp config appsettings list \
      --name "$APP_NAME" \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --query "[].{name:name, value:value}" -o table
 
    echo "=== Staging Settings ==="
    az webapp config appsettings list \
      --name "$APP_NAME" \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --slot staging \
      --query "[].{name:name, value:value}" -o table
    ```
@@ -583,7 +583,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az webapp deployment slot swap \
      --name "$APP_NAME" \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --slot staging \
      --target-slot production
    ```
@@ -593,7 +593,7 @@ az group create --name rg-certlab-compute --location eastus \
    echo "Production settings after swap:"
    az webapp config appsettings list \
      --name "$APP_NAME" \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --query "[?name=='ENVIRONMENT'].value" -o tsv
    ```
 
@@ -647,14 +647,14 @@ az group create --name rg-certlab-compute --location eastus \
    # Create an Availability Set
    az vm availability-set create \
      --name avset-api \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --platform-fault-domain-count 2 \
      --platform-update-domain-count 5
 
    # Verify the availability set
    az vm availability-set show \
      --name avset-api \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --query "{name:name, faultDomains:platformFaultDomainCount, updateDomains:platformUpdateDomainCount}" \
      --output json
    ```
@@ -692,19 +692,19 @@ az group create --name rg-certlab-compute --location eastus \
 
 1. Create an Azure Container Registry:
    ```bash
-   ACR_NAME="acrcertlab$(date +%s | tail -c 8)"
+   ACR_NAME="acraz104-lab$(date +%s | tail -c 8)"
    az acr create \
      --name "$ACR_NAME" \
-     --resource-group rg-certlab-compute \
+     --resource-group rg-az104-lab-compute \
      --sku Basic \
      --admin-enabled true \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    echo "ACR: $ACR_NAME"
    ```
 
 2. Create a simple Dockerfile:
    ```bash
-   mkdir -p certlab-app && cd certlab-app
+   mkdir -p az104-lab-app && cd az104-lab-app
 
    cat > index.html << 'EOF'
    <!DOCTYPE html>
@@ -726,7 +726,7 @@ az group create --name rg-certlab-compute --location eastus \
    ```bash
    az acr build \
      --registry "$ACR_NAME" \
-     --image certlab-web:v1 \
+     --image az104-lab-web:v1 \
      --file Dockerfile \
      .
    ```
@@ -734,7 +734,7 @@ az group create --name rg-certlab-compute --location eastus \
 4. Verify the image in the registry:
    ```bash
    az acr repository list --name "$ACR_NAME" -o table
-   az acr repository show-tags --name "$ACR_NAME" --repository certlab-web -o table
+   az acr repository show-tags --name "$ACR_NAME" --repository az104-lab-web -o table
    ```
 
 5. Deploy the custom image from ACR to ACI:
@@ -742,21 +742,21 @@ az group create --name rg-certlab-compute --location eastus \
    ACR_PASSWORD=$(az acr credential show --name "$ACR_NAME" --query "passwords[0].value" -o tsv)
 
    az container create \
-     --name aci-certlab-web \
-     --resource-group rg-certlab-compute \
-     --image "${ACR_NAME}.azurecr.io/certlab-web:v1" \
+     --name aci-az104-lab-web \
+     --resource-group rg-az104-lab-compute \
+     --image "${ACR_NAME}.azurecr.io/az104-lab-web:v1" \
      --registry-login-server "${ACR_NAME}.azurecr.io" \
      --registry-username "$ACR_NAME" \
      --registry-password "$ACR_PASSWORD" \
-     --dns-name-label "certlab-web-$(date +%s | tail -c 6)" \
+     --dns-name-label "az104-lab-web-$(date +%s | tail -c 6)" \
      --ports 80 \
      --cpu 0.5 --memory 0.5 \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 6. Test the deployment:
    ```bash
-   FQDN=$(az container show --name aci-certlab-web --resource-group rg-certlab-compute \
+   FQDN=$(az container show --name aci-az104-lab-web --resource-group rg-az104-lab-compute \
      --query "ipAddress.fqdn" -o tsv)
    echo "App URL: http://${FQDN}"
    curl -s "http://${FQDN}"
@@ -764,7 +764,7 @@ az group create --name rg-certlab-compute --location eastus \
 
 7. Clean up the app directory:
    ```bash
-   cd .. && rm -rf certlab-app
+   cd .. && rm -rf az104-lab-app
    ```
 
 **Success Criteria**:
@@ -788,14 +788,14 @@ az group create --name rg-certlab-compute --location eastus \
 
 ```bash
 # Remove ACI containers
-az container delete --name aci-hello --resource-group rg-certlab-compute --yes 2>/dev/null
-az container delete --name aci-certlab-web --resource-group rg-certlab-compute --yes 2>/dev/null
+az container delete --name aci-hello --resource-group rg-az104-lab-compute --yes 2>/dev/null
+az container delete --name aci-az104-lab-web --resource-group rg-az104-lab-compute --yes 2>/dev/null
 
 # Remove local template files
 rm -f sample-arm-template.json sample-arm-template.bicep modified-template.bicep
 
 # Remove resource group (removes all compute resources)
-az group delete --name rg-certlab-compute --yes --no-wait
+az group delete --name rg-az104-lab-compute --yes --no-wait
 
 echo "✅ Compute lab resources cleaned up"
 ```

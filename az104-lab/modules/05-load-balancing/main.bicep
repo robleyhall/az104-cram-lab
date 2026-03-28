@@ -21,7 +21,7 @@ param location string = 'eastus'
 param spoke1SubnetId string = ''
 
 @description('Environment label applied to every resource. Useful for cost tracking and Azure Policy — both AZ-104 topics.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 @description('Deterministic unique suffix derived from the resource group ID. Ensures globally unique names (e.g. Traffic Manager DNS) without manual input.')
 param uniqueSuffix string = uniqueString(resourceGroup().id)

@@ -18,8 +18,8 @@ targetScope = 'resourceGroup'
 param location string = 'eastus'
 
 @description('Environment label used in naming and tagging.')
-@allowed(['certlab', 'dev', 'test'])
-param environment string = 'certlab'
+@allowed(['az104-lab', 'dev', 'test'])
+param environment string = 'az104-lab'
 
 @description('Project-wide prefix applied to resource names.')
 param projectPrefix string = 'az104'
@@ -63,7 +63,7 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-
   tags: tags
 }
 
-@description('Assigns Contributor role to the certlab-admins Entra ID group on this resource group.')
+@description('Assigns Contributor role to the az104-lab-admins Entra ID group on this resource group.')
 resource contributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   if (!empty(contributorGroupPrincipalId)) {
     name: guid(resourceGroup().id, contributorGroupPrincipalId, contributorRoleDefinitionId)
@@ -71,11 +71,11 @@ resource contributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022
       roleDefinitionId: contributorRoleDefinitionId
       principalId: contributorGroupPrincipalId
       principalType: 'Group'
-      description: 'AZ-104 Lab — Contributor for certlab-admins group'
+      description: 'AZ-104 Lab — Contributor for az104-lab-admins group'
     }
   }
 
-@description('Assigns Reader role to the certlab-readers Entra ID group on this resource group.')
+@description('Assigns Reader role to the az104-lab-readers Entra ID group on this resource group.')
 resource readerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   if (!empty(readerGroupPrincipalId)) {
     name: guid(resourceGroup().id, readerGroupPrincipalId, readerRoleDefinitionId)
@@ -83,7 +83,7 @@ resource readerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-0
       roleDefinitionId: readerRoleDefinitionId
       principalId: readerGroupPrincipalId
       principalType: 'Group'
-      description: 'AZ-104 Lab — Reader for certlab-readers group'
+      description: 'AZ-104 Lab — Reader for az104-lab-readers group'
     }
   }
 

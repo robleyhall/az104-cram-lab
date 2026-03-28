@@ -15,8 +15,8 @@
 - Module 00 (Foundation) deployed
 
 ```bash
-az group create --name rg-certlab-networking --location eastus \
-  --tags Environment=certlab Module=networking
+az group create --name rg-az104-lab-networking --location eastus \
+  --tags Environment=az104-lab Module=networking
 ```
 
 ---
@@ -38,24 +38,24 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet create \
      --name vnet-hub \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --address-prefix 10.0.0.0/16 \
      --subnet-name snet-shared \
      --subnet-prefix 10.0.0.0/24 \
-     --tags Environment=certlab Role=hub
+     --tags Environment=az104-lab Role=hub
    ```
 
 2. Add additional subnets to the hub:
    ```bash
    az network vnet subnet create \
      --name snet-management \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-hub \
      --address-prefix 10.0.1.0/24
 
    az network vnet subnet create \
      --name AzureBastionSubnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-hub \
      --address-prefix 10.0.2.0/26
    ```
@@ -64,26 +64,26 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet create \
      --name vnet-spoke1 \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --address-prefix 10.1.0.0/16 \
      --subnet-name snet-web \
      --subnet-prefix 10.1.0.0/24 \
-     --tags Environment=certlab Role=spoke
+     --tags Environment=az104-lab Role=spoke
 
    az network vnet create \
      --name vnet-spoke2 \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --address-prefix 10.2.0.0/16 \
      --subnet-name snet-app \
      --subnet-prefix 10.2.0.0/24 \
-     --tags Environment=certlab Role=spoke
+     --tags Environment=az104-lab Role=spoke
    ```
 
 4. Add a backend subnet to spoke2:
    ```bash
    az network vnet subnet create \
      --name snet-db \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke2 \
      --address-prefix 10.2.1.0/24
    ```
@@ -91,12 +91,12 @@ az group create --name rg-certlab-networking --location eastus \
 5. Verify all VNets and subnets:
    ```bash
    echo "=== Hub VNet ==="
-   az network vnet show --name vnet-hub --resource-group rg-certlab-networking \
+   az network vnet show --name vnet-hub --resource-group rg-az104-lab-networking \
      --query "{name:name, addressSpace:addressSpace.addressPrefixes, subnets:subnets[].{name:name, prefix:addressPrefix}}" \
      --output json
 
    echo "=== Spoke VNets ==="
-   az network vnet list --resource-group rg-certlab-networking \
+   az network vnet list --resource-group rg-az104-lab-networking \
      --query "[].{name:name, addressSpace:addressSpace.addressPrefixes[0]}" --output table
    ```
 
@@ -104,7 +104,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet subnet create \
      --name snet-overlap-test \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-hub \
      --address-prefix 10.0.0.128/25 2>&1 || echo "⛔ Overlap detected — subnet rejected!"
    ```
@@ -138,15 +138,15 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg create \
      --name nsg-web \
-     --resource-group rg-certlab-networking \
-     --tags Environment=certlab Tier=web
+     --resource-group rg-az104-lab-networking \
+     --tags Environment=az104-lab Tier=web
    ```
 
 2. View the default rules (three inbound, three outbound):
    ```bash
    az network nsg rule list \
      --nsg-name nsg-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --include-default \
      --query "[].{name:name, priority:priority, direction:direction, access:access, source:sourceAddressPrefix, dest:destinationAddressPrefix, port:destinationPortRange}" \
      --output table
@@ -156,7 +156,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg rule create \
      --nsg-name nsg-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowHTTP \
      --priority 100 \
      --direction Inbound \
@@ -171,7 +171,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg rule create \
      --nsg-name nsg-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowSSHFromMgmt \
      --priority 110 \
      --direction Inbound \
@@ -186,7 +186,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg rule create \
      --nsg-name nsg-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name DenyAllInbound \
      --priority 4000 \
      --direction Inbound \
@@ -201,7 +201,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet subnet update \
      --name snet-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke1 \
      --network-security-group nsg-web
    ```
@@ -210,7 +210,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet subnet show \
      --name snet-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke1 \
      --query "{subnet:name, nsg:networkSecurityGroup.id}" --output json
    ```
@@ -242,7 +242,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet peering create \
      --name hub-to-spoke1 \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-hub \
      --remote-vnet vnet-spoke1 \
      --allow-vnet-access true \
@@ -253,7 +253,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet peering create \
      --name spoke1-to-hub \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke1 \
      --remote-vnet vnet-hub \
      --allow-vnet-access true \
@@ -264,7 +264,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet peering create \
      --name hub-to-spoke2 \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-hub \
      --remote-vnet vnet-spoke2 \
      --allow-vnet-access true \
@@ -272,7 +272,7 @@ az group create --name rg-certlab-networking --location eastus \
 
    az network vnet peering create \
      --name spoke2-to-hub \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke2 \
      --remote-vnet vnet-hub \
      --allow-vnet-access true \
@@ -283,14 +283,14 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    echo "=== Hub peerings ==="
    az network vnet peering list \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-hub \
      --query "[].{name:name, state:peeringState, remoteVnet:remoteVirtualNetwork.id}" \
      --output table
 
    echo "=== Spoke1 peerings ==="
    az network vnet peering list \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke1 \
      --query "[].{name:name, state:peeringState}" --output table
    ```
@@ -301,7 +301,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    # Check if spoke1 has peering to spoke2
    az network vnet peering list \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke1 \
      --query "[?contains(remoteVirtualNetwork.id,'spoke2')]" --output table
    ```
@@ -310,7 +310,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network vnet peering show \
      --name hub-to-spoke1 \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-hub \
      --query "{allowVnetAccess:allowVirtualNetworkAccess, allowForwarded:allowForwardedTraffic, allowGatewayTransit:allowGatewayTransit, useRemoteGateways:useRemoteGateways}"
    ```
@@ -344,33 +344,33 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network asg create \
      --name asg-webservers \
-     --resource-group rg-certlab-networking \
-     --tags Environment=certlab
+     --resource-group rg-az104-lab-networking \
+     --tags Environment=az104-lab
 
    az network asg create \
      --name asg-appservers \
-     --resource-group rg-certlab-networking \
-     --tags Environment=certlab
+     --resource-group rg-az104-lab-networking \
+     --tags Environment=az104-lab
 
    az network asg create \
      --name asg-dbservers \
-     --resource-group rg-certlab-networking \
-     --tags Environment=certlab
+     --resource-group rg-az104-lab-networking \
+     --tags Environment=az104-lab
    ```
 
 2. Create an NSG with ASG-based rules:
    ```bash
    az network nsg create \
      --name nsg-app-tier \
-     --resource-group rg-certlab-networking \
-     --tags Environment=certlab
+     --resource-group rg-az104-lab-networking \
+     --tags Environment=az104-lab
    ```
 
 3. Allow web servers to communicate with app servers on port 8080:
    ```bash
    az network nsg rule create \
      --nsg-name nsg-app-tier \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowWebToApp \
      --priority 100 \
      --direction Inbound \
@@ -386,7 +386,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg rule create \
      --nsg-name nsg-app-tier \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowAppToDb \
      --priority 110 \
      --direction Inbound \
@@ -402,7 +402,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg rule create \
      --nsg-name nsg-app-tier \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name DenyInternetToBackend \
      --priority 200 \
      --direction Inbound \
@@ -418,7 +418,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg rule list \
      --nsg-name nsg-app-tier \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --query "[].{name:name, priority:priority, access:access, srcASG:sourceApplicationSecurityGroups[0].id, dstASG:destinationApplicationSecurityGroups[0].id, port:destinationPortRange}" \
      --output table
    ```
@@ -448,17 +448,17 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nic create \
      --name nic-test-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke1 \
      --subnet snet-web \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    ```
 
 2. Check the effective security rules on the NIC:
    ```bash
    az network nic list-effective-nsg \
      --name nic-test-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --query "value[0].effectiveSecurityRules[].{name:name, protocol:protocol, srcPrefix:sourceAddressPrefix, dstPort:destinationPortRange, access:access, priority:priority, direction:direction}" \
      --output table
    ```
@@ -467,11 +467,11 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg create \
      --name nsg-nic-level \
-     --resource-group rg-certlab-networking
+     --resource-group rg-az104-lab-networking
 
    az network nsg rule create \
      --nsg-name nsg-nic-level \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowHTTPSOnly \
      --priority 100 \
      --direction Inbound \
@@ -482,7 +482,7 @@ az group create --name rg-certlab-networking --location eastus \
 
    az network nic update \
      --name nic-test-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --network-security-group nsg-nic-level
    ```
 
@@ -490,7 +490,7 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nic list-effective-nsg \
      --name nic-test-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --query "value[].effectiveSecurityRules[?direction=='Inbound'].{name:name, protocol:protocol, dstPort:destinationPortRange, access:access, priority:priority}" \
      --output table
    ```
@@ -539,12 +539,12 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg create \
      --name nsg-app-subnet \
-     --resource-group rg-certlab-networking
+     --resource-group rg-az104-lab-networking
 
    # Rule 1: Allow traffic from web ASG on port 8080
    az network nsg rule create \
      --nsg-name nsg-app-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowFromWebTier \
      --priority 100 --direction Inbound --access Allow \
      --protocol Tcp --source-asgs asg-webservers \
@@ -553,7 +553,7 @@ az group create --name rg-certlab-networking --location eastus \
    # Rule 2: Allow SSH from management subnet
    az network nsg rule create \
      --nsg-name nsg-app-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowSSHFromMgmt \
      --priority 110 --direction Inbound --access Allow \
      --protocol Tcp --source-address-prefixes 10.0.1.0/24 \
@@ -562,7 +562,7 @@ az group create --name rg-certlab-networking --location eastus \
    # Rule 3: Deny everything else from internet
    az network nsg rule create \
      --nsg-name nsg-app-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name DenyInternetInbound \
      --priority 4000 --direction Inbound --access Deny \
      --protocol '*' --source-address-prefixes Internet \
@@ -573,12 +573,12 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    az network nsg create \
      --name nsg-db-subnet \
-     --resource-group rg-certlab-networking
+     --resource-group rg-az104-lab-networking
 
    # Only allow SQL from app tier
    az network nsg rule create \
      --nsg-name nsg-db-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowSQLFromAppTier \
      --priority 100 --direction Inbound --access Allow \
      --protocol Tcp --source-asgs asg-appservers \
@@ -587,7 +587,7 @@ az group create --name rg-certlab-networking --location eastus \
    # Allow management access
    az network nsg rule create \
      --nsg-name nsg-db-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name AllowMgmtAccess \
      --priority 110 --direction Inbound --access Allow \
      --protocol Tcp --source-address-prefixes 10.0.1.0/24 \
@@ -596,7 +596,7 @@ az group create --name rg-certlab-networking --location eastus \
    # Deny all other inbound
    az network nsg rule create \
      --nsg-name nsg-db-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --name DenyAllInbound \
      --priority 4000 --direction Inbound --access Deny \
      --protocol '*' --source-address-prefixes '*' \
@@ -606,11 +606,11 @@ az group create --name rg-certlab-networking --location eastus \
 4. Associate NSGs with subnets:
    ```bash
    az network vnet subnet update \
-     --name snet-app --resource-group rg-certlab-networking \
+     --name snet-app --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke2 --network-security-group nsg-app-subnet
 
    az network vnet subnet update \
-     --name snet-db --resource-group rg-certlab-networking \
+     --name snet-db --resource-group rg-az104-lab-networking \
      --vnet-name vnet-spoke2 --network-security-group nsg-db-subnet
    ```
 
@@ -618,17 +618,17 @@ az group create --name rg-certlab-networking --location eastus \
    ```bash
    echo "=== Web NSG Rules ==="
    az network nsg rule list --nsg-name nsg-web \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --query "[].{name:name, priority:priority, access:access, port:destinationPortRange}" -o table
 
    echo "=== App NSG Rules ==="
    az network nsg rule list --nsg-name nsg-app-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --query "[].{name:name, priority:priority, access:access, port:destinationPortRange}" -o table
 
    echo "=== DB NSG Rules ==="
    az network nsg rule list --nsg-name nsg-db-subnet \
-     --resource-group rg-certlab-networking \
+     --resource-group rg-az104-lab-networking \
      --query "[].{name:name, priority:priority, access:access, port:destinationPortRange}" -o table
    ```
 
@@ -648,24 +648,24 @@ az group create --name rg-certlab-networking --location eastus \
 
 ```bash
 # Remove NIC
-az network nic delete --name nic-test-web --resource-group rg-certlab-networking --no-wait
+az network nic delete --name nic-test-web --resource-group rg-az104-lab-networking --no-wait
 
 # Remove NSG associations from subnets (set to empty)
 for subnet_vnet in "snet-web vnet-spoke1" "snet-app vnet-spoke2" "snet-db vnet-spoke2"; do
   snet=$(echo $subnet_vnet | cut -d' ' -f1)
   vnet=$(echo $subnet_vnet | cut -d' ' -f2)
-  az network vnet subnet update --name "$snet" --resource-group rg-certlab-networking \
+  az network vnet subnet update --name "$snet" --resource-group rg-az104-lab-networking \
     --vnet-name "$vnet" --network-security-group "" 2>/dev/null
 done
 
 # Remove VNet peerings
-az network vnet peering delete --name hub-to-spoke1 --resource-group rg-certlab-networking --vnet-name vnet-hub 2>/dev/null
-az network vnet peering delete --name spoke1-to-hub --resource-group rg-certlab-networking --vnet-name vnet-spoke1 2>/dev/null
-az network vnet peering delete --name hub-to-spoke2 --resource-group rg-certlab-networking --vnet-name vnet-hub 2>/dev/null
-az network vnet peering delete --name spoke2-to-hub --resource-group rg-certlab-networking --vnet-name vnet-spoke2 2>/dev/null
+az network vnet peering delete --name hub-to-spoke1 --resource-group rg-az104-lab-networking --vnet-name vnet-hub 2>/dev/null
+az network vnet peering delete --name spoke1-to-hub --resource-group rg-az104-lab-networking --vnet-name vnet-spoke1 2>/dev/null
+az network vnet peering delete --name hub-to-spoke2 --resource-group rg-az104-lab-networking --vnet-name vnet-hub 2>/dev/null
+az network vnet peering delete --name spoke2-to-hub --resource-group rg-az104-lab-networking --vnet-name vnet-spoke2 2>/dev/null
 
 # Remove resource group (removes all networking resources)
-az group delete --name rg-certlab-networking --yes --no-wait
+az group delete --name rg-az104-lab-networking --yes --no-wait
 
 echo "✅ Networking lab resources cleaned up"
 ```

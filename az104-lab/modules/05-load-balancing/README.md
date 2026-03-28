@@ -56,16 +56,16 @@ Is it global (multi-region)?
 
 | Resource | Name | Purpose |
 |---|---|---|
-| Public IP | `pip-certlab-lb` | Standard SKU, static — frontend IP for the LB |
-| Load Balancer | `lb-certlab-web` | Standard public LB with HTTP rule + SSH NAT rules |
-| Backend Pool | `bp-certlab-web` | Target pool for VMs (VMs added in Module 07) |
+| Public IP | `pip-az104-lab-lb` | Standard SKU, static — frontend IP for the LB |
+| Load Balancer | `lb-az104-lab-web` | Standard public LB with HTTP rule + SSH NAT rules |
+| Backend Pool | `bp-az104-lab-web` | Target pool for VMs (VMs added in Module 07) |
 | Health Probe | `hp-http` | HTTP probe on port 80, path `/`, interval 15 s |
 | LB Rule | `rule-http` | Port 80 → 80, TCP, no session persistence |
 | NAT Rule | `natrule-ssh-vm1` | Port 50001 → 22 (SSH to VM1) |
 | NAT Rule | `natrule-ssh-vm2` | Port 50002 → 22 (SSH to VM2) |
-| Traffic Manager | `tm-certlab-web` | Performance routing, HTTP monitor on port 80 |
+| Traffic Manager | `tm-az104-lab-web` | Performance routing, HTTP monitor on port 80 |
 
-All resources are tagged with `Environment=certlab`, `Project=az104-lab`, `Module=load-balancing`.
+All resources are tagged with `Environment=az104-lab`, `Project=az104-lab`, `Module=load-balancing`.
 
 ## Prerequisites
 
@@ -82,29 +82,29 @@ az bicep version
 
 ```bash
 # 1. Create the resource group
-az group create --name rg-certlab-load-balancing --location eastus
+az group create --name rg-az104-lab-load-balancing --location eastus
 
 # 2. Preview changes (always do this first!)
 az deployment group create \
-  --resource-group rg-certlab-load-balancing \
+  --resource-group rg-az104-lab-load-balancing \
   --template-file main.bicep \
   --parameters main.bicepparam \
   --what-if
 
 # 3. Deploy
 az deployment group create \
-  --resource-group rg-certlab-load-balancing \
+  --resource-group rg-az104-lab-load-balancing \
   --template-file main.bicep \
   --parameters main.bicepparam
 
 # Optional: pass the spoke subnet from Module 03
 az deployment group create \
-  --resource-group rg-certlab-load-balancing \
+  --resource-group rg-az104-lab-load-balancing \
   --template-file main.bicep \
   --parameters main.bicepparam \
   --parameters spoke1SubnetId="$(az network vnet subnet show \
-      --resource-group rg-certlab-networking \
-      --vnet-name vnet-certlab-spoke1 \
+      --resource-group rg-az104-lab-networking \
+      --vnet-name vnet-az104-lab-spoke1 \
       --name default \
       --query id -o tsv)"
 ```
@@ -114,36 +114,36 @@ az deployment group create \
 ```bash
 # Confirm Load Balancer
 az network lb show \
-  --resource-group rg-certlab-load-balancing \
-  --name lb-certlab-web \
+  --resource-group rg-az104-lab-load-balancing \
+  --name lb-az104-lab-web \
   --query '{name:name, sku:sku.name, frontendIP:frontendIPConfigurations[0].name, rules:loadBalancingRules[].name, probes:probes[].name}' \
   --output json
 
 # List backend pool (empty until VMs are added in Module 07)
 az network lb address-pool show \
-  --resource-group rg-certlab-load-balancing \
-  --lb-name lb-certlab-web \
-  --name bp-certlab-web \
+  --resource-group rg-az104-lab-load-balancing \
+  --lb-name lb-az104-lab-web \
+  --name bp-az104-lab-web \
   --query '{name:name, backendAddresses:backendAddresses}' \
   --output json
 
 # List inbound NAT rules
 az network lb inbound-nat-rule list \
-  --resource-group rg-certlab-load-balancing \
-  --lb-name lb-certlab-web \
+  --resource-group rg-az104-lab-load-balancing \
+  --lb-name lb-az104-lab-web \
   --output table
 
 # Show public IP assigned to the LB
 az network public-ip show \
-  --resource-group rg-certlab-load-balancing \
-  --name pip-certlab-lb \
+  --resource-group rg-az104-lab-load-balancing \
+  --name pip-az104-lab-lb \
   --query '{ip:ipAddress, sku:sku.name, allocation:publicIPAllocationMethod}' \
   --output json
 
 # Confirm Traffic Manager profile
 az network traffic-manager profile show \
-  --resource-group rg-certlab-load-balancing \
-  --name tm-certlab-web \
+  --resource-group rg-az104-lab-load-balancing \
+  --name tm-az104-lab-web \
   --query '{name:name, fqdn:dnsConfig.fqdn, routing:trafficRoutingMethod, status:profileStatus}' \
   --output json
 ```
@@ -193,10 +193,10 @@ Key exam points:
 
 ```bash
 # Remove the load-balancing resource group and all resources
-az group delete --name rg-certlab-load-balancing --yes --no-wait
+az group delete --name rg-az104-lab-load-balancing --yes --no-wait
 
 # Verify deletion is in progress
-az group show --name rg-certlab-load-balancing --query 'properties.provisioningState' --output tsv 2>/dev/null || echo "Deleted"
+az group show --name rg-az104-lab-load-balancing --query 'properties.provisioningState' --output tsv 2>/dev/null || echo "Deleted"
 ```
 
 ## Cost Notes

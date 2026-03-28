@@ -8,7 +8,7 @@ set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
-RG_NAME="rg-certlab-identity"
+RG_NAME="rg-az104-lab-identity"
 PASS_COUNT=0; FAIL_COUNT=0; WARN_COUNT=0
 
 pass() { echo -e "  ${GREEN}✅ PASS${NC} — $*"; PASS_COUNT=$((PASS_COUNT + 1)); }
@@ -31,7 +31,7 @@ fi
 
 # --- Entra Users ---
 header "Entra ID Users"
-EXPECTED_USERS=("certlab-user1" "certlab-user2" "certlab-user3")
+EXPECTED_USERS=("az104-lab-user1" "az104-lab-user2" "az104-lab-user3")
 for user in "${EXPECTED_USERS[@]}"; do
     FOUND=$(az ad user list --filter "startswith(displayName,'$user')" --query "length([])" -o tsv 2>/dev/null || echo "0")
     if [[ "$FOUND" -gt 0 ]]; then
@@ -43,7 +43,7 @@ done
 
 # --- Entra Groups ---
 header "Entra ID Groups"
-EXPECTED_GROUPS=("certlab-admins" "certlab-readers" "certlab-contributors")
+EXPECTED_GROUPS=("az104-lab-admins" "az104-lab-readers" "az104-lab-contributors")
 for group in "${EXPECTED_GROUPS[@]}"; do
     FOUND=$(az ad group list --filter "startswith(displayName,'$group')" --query "length([])" -o tsv 2>/dev/null || echo "0")
     if [[ "$FOUND" -gt 0 ]]; then

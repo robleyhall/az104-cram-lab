@@ -16,8 +16,8 @@
 - Module 00 (Foundation) deployed
 
 ```bash
-az group create --name rg-certlab-storage --location eastus \
-  --tags Environment=certlab Module=storage
+az group create --name rg-az104-lab-storage --location eastus \
+  --tags Environment=az104-lab Module=storage
 ```
 
 ---
@@ -37,17 +37,17 @@ az group create --name rg-certlab-storage --location eastus \
 
 1. Create a storage account:
    ```bash
-   STORAGE_PRIMARY="stcertlab$(date +%s | tail -c 9)"
+   STORAGE_PRIMARY="staz104-lab$(date +%s | tail -c 9)"
    az storage account create \
      --name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --sku Standard_LRS \
      --kind StorageV2 \
      --location eastus \
      --access-tier Hot \
      --min-tls-version TLS1_2 \
      --allow-blob-public-access false \
-     --tags Environment=certlab
+     --tags Environment=az104-lab
    echo "Primary storage: $STORAGE_PRIMARY"
    ```
 
@@ -235,7 +235,7 @@ az group create --name rg-certlab-storage --location eastus \
    ```bash
    az storage account management-policy create \
      --account-name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --policy @lifecycle-policy.json
    ```
 
@@ -243,7 +243,7 @@ az group create --name rg-certlab-storage --location eastus \
    ```bash
    az storage account management-policy show \
      --account-name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --query "policy.rules[].{name:name, enabled:enabled, filters:definition.filters.prefixMatch}" \
      --output table
    ```
@@ -418,7 +418,7 @@ az group create --name rg-certlab-storage --location eastus \
    ```bash
    az storage account update \
      --name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --default-action Deny
    ```
 
@@ -427,7 +427,7 @@ az group create --name rg-certlab-storage --location eastus \
    MY_IP=$(curl -s https://ifconfig.me)
    az storage account network-rule add \
      --account-name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --ip-address "$MY_IP"
    echo "Added IP: $MY_IP"
    ```
@@ -436,7 +436,7 @@ az group create --name rg-certlab-storage --location eastus \
    ```bash
    az storage account show \
      --name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --query "{default:networkRuleSet.defaultAction, ipRules:networkRuleSet.ipRules[].ipAddressOrRange, bypass:networkRuleSet.bypass}" \
      --output json
    ```
@@ -446,7 +446,7 @@ az group create --name rg-certlab-storage --location eastus \
    # By default, Azure services are allowed to bypass the firewall
    az storage account show \
      --name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --query "networkRuleSet.bypass" -o tsv
    # Output: AzureServices
    ```
@@ -488,11 +488,11 @@ az group create --name rg-certlab-storage --location eastus \
    STORAGE_SECONDARY="streplica$(date +%s | tail -c 9)"
    az storage account create \
      --name "$STORAGE_SECONDARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --sku Standard_LRS \
      --kind StorageV2 \
      --location westus2 \
-     --tags Environment=certlab Purpose=replication
+     --tags Environment=az104-lab Purpose=replication
    echo "Secondary storage: $STORAGE_SECONDARY"
    ```
 
@@ -501,7 +501,7 @@ az group create --name rg-certlab-storage --location eastus \
    for acct in "$STORAGE_PRIMARY" "$STORAGE_SECONDARY"; do
      az storage account blob-service-properties update \
        --account-name "$acct" \
-       --resource-group rg-certlab-storage \
+       --resource-group rg-az104-lab-storage \
        --enable-versioning true \
        --enable-change-feed true
    done
@@ -519,7 +519,7 @@ az group create --name rg-certlab-storage --location eastus \
    ```bash
    az storage account or-policy create \
      --account-name "$STORAGE_SECONDARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --source-account "$STORAGE_PRIMARY" \
      --destination-account "$STORAGE_SECONDARY" \
      --source-container documents \
@@ -531,7 +531,7 @@ az group create --name rg-certlab-storage --location eastus \
    ```bash
    az storage account or-policy list \
      --account-name "$STORAGE_SECONDARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --output table
    ```
 
@@ -583,7 +583,7 @@ az group create --name rg-certlab-storage --location eastus \
    az storage share-rm create \
      --name "fileshare-team" \
      --storage-account "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --quota 100 \
      --access-tier Hot
    ```
@@ -727,7 +727,7 @@ az group create --name rg-certlab-storage --location eastus \
 
    az storage account management-policy create \
      --account-name "$STORAGE_PRIMARY" \
-     --resource-group rg-certlab-storage \
+     --resource-group rg-az104-lab-storage \
      --policy @full-lifecycle-policy.json
    ```
 
@@ -789,11 +789,11 @@ az group create --name rg-certlab-storage --location eastus \
 # Remove replication policy
 az storage account or-policy list \
   --account-name "$STORAGE_SECONDARY" \
-  --resource-group rg-certlab-storage \
+  --resource-group rg-az104-lab-storage \
   --query "[].policyId" -o tsv | while read pid; do
     az storage account or-policy delete \
       --account-name "$STORAGE_SECONDARY" \
-      --resource-group rg-certlab-storage \
+      --resource-group rg-az104-lab-storage \
       --policy-id "$pid" 2>/dev/null
 done
 
@@ -802,7 +802,7 @@ rm -f sample-report.txt health-check.json repl-test.txt team-doc.txt
 rm -f lifecycle-policy.json full-lifecycle-policy.json
 
 # Remove resource group (removes all storage accounts)
-az group delete --name rg-certlab-storage --yes --no-wait
+az group delete --name rg-az104-lab-storage --yes --no-wait
 
 echo "✅ Storage lab resources cleaned up"
 ```

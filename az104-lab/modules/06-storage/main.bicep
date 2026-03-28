@@ -13,7 +13,7 @@ targetScope = 'resourceGroup'
 param location string = resourceGroup().location
 
 @description('Environment label used in naming and tags.')
-param environment string = 'certlab'
+param environment string = 'az104-lab'
 
 @description('Deterministic unique suffix for globally unique names. Derived from the resource group ID by default.')
 param uniqueSuffix string = uniqueString(resourceGroup().id)
@@ -32,8 +32,8 @@ var commonTags = {
 
 // Storage account names must be 3‑24 chars, lowercase alphanumeric only.
 // The prefix + uniqueSuffix (13 chars) stays well within limits.
-var primaryStorageName = 'stcertlabpri${uniqueSuffix}'
-var replicaStorageName = 'stcertlabrep${uniqueSuffix}'
+var primaryStorageName = 'staz104-labpri${uniqueSuffix}'
+var replicaStorageName = 'staz104-labrep${uniqueSuffix}'
 
 // ── Primary Storage Account ─────────────────────────────────────────────────
 // Redundancy note: This lab uses Standard_LRS for cost savings.
@@ -60,7 +60,7 @@ resource primaryStorage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
     // Shared key access is enabled for lab exercises (SAS token generation, etc.).
     // Security best practice for production: set to false and use Entra ID RBAC.
     allowSharedKeyAccess: true
-    allowBlobPublicAccess: true // Required for the certlab-public container demo
+    allowBlobPublicAccess: true // Required for the az104-lab-public container demo
     networkAcls: {
       defaultAction: 'Deny'
       bypass: 'AzureServices'
@@ -122,7 +122,7 @@ resource primaryFileService 'Microsoft.Storage/storageAccounts/fileServices@2023
 @description('Private blob container for lab data and lifecycle management demos.')
 resource dataContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: primaryBlobService
-  name: 'certlab-data'
+  name: 'az104-lab-data'
   properties: {
     publicAccess: 'None'
   }
@@ -131,7 +131,7 @@ resource dataContainer 'Microsoft.Storage/storageAccounts/blobServices/container
 @description('Blob‑level public access container for demonstrating anonymous read access.')
 resource publicContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: primaryBlobService
-  name: 'certlab-public'
+  name: 'az104-lab-public'
   properties: {
     publicAccess: 'Blob'
   }
@@ -142,7 +142,7 @@ resource publicContainer 'Microsoft.Storage/storageAccounts/blobServices/contain
 @description('Azure Files share for SMB/NFS file share exercises (5 GB quota, Hot tier).')
 resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-05-01' = {
   parent: primaryFileService
-  name: 'certlab-files'
+  name: 'az104-lab-files'
   properties: {
     shareQuota: 5
     accessTier: 'Hot'
@@ -151,7 +151,7 @@ resource fileShare 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-0
 
 // ── Lifecycle Management Policy ─────────────────────────────────────────────
 
-@description('Blob lifecycle management: Cool at 30 d → Archive at 90 d → Delete at 365 d. Applied to blockBlobs in certlab-data.')
+@description('Blob lifecycle management: Cool at 30 d → Archive at 90 d → Delete at 365 d. Applied to blockBlobs in az104-lab-data.')
 resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2023-05-01' = {
   parent: primaryStorage
   name: 'default'
@@ -166,7 +166,7 @@ resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2
           definition: {
             filters: {
               blobTypes: ['blockBlob']
-              prefixMatch: ['certlab-data/']
+              prefixMatch: ['az104-lab-data/']
             }
             actions: {
               baseBlob: {
@@ -184,7 +184,7 @@ resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2
           definition: {
             filters: {
               blobTypes: ['blockBlob']
-              prefixMatch: ['certlab-data/']
+              prefixMatch: ['az104-lab-data/']
             }
             actions: {
               baseBlob: {
@@ -202,7 +202,7 @@ resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2
           definition: {
             filters: {
               blobTypes: ['blockBlob']
-              prefixMatch: ['certlab-data/']
+              prefixMatch: ['az104-lab-data/']
             }
             actions: {
               baseBlob: {
@@ -229,8 +229,8 @@ resource lifecyclePolicy 'Microsoft.Storage/storageAccounts/managementPolicies@2
 //   az storage account or-policy create \
 //     --account-name <primaryStorageName> \
 //     --destination-account <replicaStorageName> \
-//     --source-container certlab-data \
-//     --destination-container certlab-data-replica \
+//     --source-container az104-lab-data \
+//     --destination-container az104-lab-data-replica \
 //     --min-creation-time '<ISO‑8601>'
 //
 // See: https://learn.microsoft.com/azure/storage/blobs/object-replication-configure
@@ -261,10 +261,10 @@ resource replicaBlobService 'Microsoft.Storage/storageAccounts/blobServices@2023
   }
 }
 
-@description('Destination container for object replication from certlab-data.')
+@description('Destination container for object replication from az104-lab-data.')
 resource replicaContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
   parent: replicaBlobService
-  name: 'certlab-data-replica'
+  name: 'az104-lab-data-replica'
   properties: {
     publicAccess: 'None'
   }

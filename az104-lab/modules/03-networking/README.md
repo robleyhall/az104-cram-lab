@@ -19,7 +19,7 @@ After deploying this module you will be able to:
 
 ```
                     ┌──────────────────────┐
-                    │   vnet-certlab-hub   │
+                    │   vnet-az104-lab-hub   │
                     │     10.0.0.0/16      │
                     │   (Module 00)        │
                     └──────┬───────┬───────┘
@@ -27,7 +27,7 @@ After deploying this module you will be able to:
               ┌────────────┘       └────────────┐
               ▼                                  ▼
 ┌─────────────────────────┐        ┌─────────────────────────┐
-│  vnet-certlab-spoke1    │        │  vnet-certlab-spoke2    │
+│  vnet-az104-lab-spoke1    │        │  vnet-az104-lab-spoke2    │
 │    10.1.0.0/16          │        │    10.2.0.0/16          │
 │                         │        │                         │
 │  ┌─────────────────┐   │        │  ┌─────────────────┐   │
@@ -39,7 +39,7 @@ After deploying this module you will be able to:
 │  │ + nsg-app        │   │        └─────────────────────────┘
 │  └─────────────────┘   │
 │  ┌─────────────────┐   │        ASGs: asg-web, asg-app, asg-data
-│  │ data /24         │   │        Public IP: pip-certlab-web (Standard/Static)
+│  │ data /24         │   │        Public IP: pip-az104-lab-web (Standard/Static)
 │  └─────────────────┘   │
 └─────────────────────────┘
 ```
@@ -50,16 +50,16 @@ After deploying this module you will be able to:
 
 | Resource | Name | Details |
 |---|---|---|
-| Virtual Network | `vnet-certlab-spoke1` | 10.1.0.0/16 — subnets: default, app, data |
-| Virtual Network | `vnet-certlab-spoke2` | 10.2.0.0/16 — subnets: default, app |
-| VNet Peering | `peer-spoke1-to-vnet-certlab-hub` | spoke1 → hub (forwarded traffic enabled) |
-| VNet Peering | `peer-spoke2-to-vnet-certlab-hub` | spoke2 → hub (forwarded traffic enabled) |
-| Network Security Group | `nsg-certlab-web` | HTTP 80, HTTPS 443, SSH 22, DenyAll |
-| Network Security Group | `nsg-certlab-app` | Allow 8080 from asg-web only, DenyAll |
-| Application Security Group | `asg-certlab-web` | Web-tier NIC grouping |
-| Application Security Group | `asg-certlab-app` | App-tier NIC grouping |
-| Application Security Group | `asg-certlab-data` | Data-tier NIC grouping |
-| Public IP Address | `pip-certlab-web` | Standard SKU, Static allocation |
+| Virtual Network | `vnet-az104-lab-spoke1` | 10.1.0.0/16 — subnets: default, app, data |
+| Virtual Network | `vnet-az104-lab-spoke2` | 10.2.0.0/16 — subnets: default, app |
+| VNet Peering | `peer-spoke1-to-vnet-az104-lab-hub` | spoke1 → hub (forwarded traffic enabled) |
+| VNet Peering | `peer-spoke2-to-vnet-az104-lab-hub` | spoke2 → hub (forwarded traffic enabled) |
+| Network Security Group | `nsg-az104-lab-web` | HTTP 80, HTTPS 443, SSH 22, DenyAll |
+| Network Security Group | `nsg-az104-lab-app` | Allow 8080 from asg-web only, DenyAll |
+| Application Security Group | `asg-az104-lab-web` | Web-tier NIC grouping |
+| Application Security Group | `asg-az104-lab-app` | App-tier NIC grouping |
+| Application Security Group | `asg-az104-lab-data` | Data-tier NIC grouping |
+| Public IP Address | `pip-az104-lab-web` | Standard SKU, Static allocation |
 
 ## Cram Session Timestamps
 
@@ -77,7 +77,7 @@ These timestamps reference [John Savill's AZ-104 Cram](https://www.youtube.com/w
 ## Prerequisites
 
 - **Azure CLI** v2.60+ with Bicep CLI installed (`az bicep version`)
-- **Module 00 deployed** — the hub VNet (`vnet-certlab-hub`) must exist in `rg-certlab-foundation`
+- **Module 00 deployed** — the hub VNet (`vnet-az104-lab-hub`) must exist in `rg-az104-lab-foundation`
 - Know your **public IP** for the SSH rule (run `curl -s ifconfig.me`)
 
 ## Deploy
@@ -86,8 +86,8 @@ These timestamps reference [John Savill's AZ-104 Cram](https://www.youtube.com/w
 
 ```bash
 HUB_VNET_ID=$(az network vnet show \
-  --resource-group rg-certlab-foundation \
-  --name vnet-certlab-hub \
+  --resource-group rg-az104-lab-foundation \
+  --name vnet-az104-lab-hub \
   --query id -o tsv)
 
 echo "Hub VNet ID: $HUB_VNET_ID"
@@ -97,16 +97,16 @@ echo "Hub VNet ID: $HUB_VNET_ID"
 
 ```bash
 az group create \
-  --name rg-certlab-networking \
+  --name rg-az104-lab-networking \
   --location eastus \
-  --tags Environment=certlab Project=az104-lab Module=networking
+  --tags Environment=az104-lab Project=az104-lab Module=networking
 ```
 
 ### 3. Preview changes
 
 ```bash
 az deployment group what-if \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file main.bicep \
   --parameters main.bicepparam \
   --parameters hubVNetResourceId="$HUB_VNET_ID"
@@ -116,7 +116,7 @@ az deployment group what-if \
 
 ```bash
 az deployment group create \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --template-file main.bicep \
   --parameters main.bicepparam \
   --parameters hubVNetResourceId="$HUB_VNET_ID"
@@ -126,7 +126,7 @@ az deployment group create \
 > ```bash
 > MY_IP=$(curl -s ifconfig.me)
 > az deployment group create \
->   --resource-group rg-certlab-networking \
+>   --resource-group rg-az104-lab-networking \
 >   --template-file main.bicep \
 >   --parameters main.bicepparam \
 >   --parameters hubVNetResourceId="$HUB_VNET_ID" allowedSourceIP="$MY_IP"
@@ -139,20 +139,20 @@ The template creates spoke→hub peering. You must also create hub→spoke peeri
 ```bash
 # Hub → Spoke1
 az network vnet peering create \
-  --resource-group rg-certlab-foundation \
+  --resource-group rg-az104-lab-foundation \
   --name peer-hub-to-spoke1 \
-  --vnet-name vnet-certlab-hub \
-  --remote-vnet "$( az network vnet show -g rg-certlab-networking -n vnet-certlab-spoke1 --query id -o tsv )" \
+  --vnet-name vnet-az104-lab-hub \
+  --remote-vnet "$( az network vnet show -g rg-az104-lab-networking -n vnet-az104-lab-spoke1 --query id -o tsv )" \
   --allow-vnet-access \
   --allow-forwarded-traffic \
   --allow-gateway-transit
 
 # Hub → Spoke2
 az network vnet peering create \
-  --resource-group rg-certlab-foundation \
+  --resource-group rg-az104-lab-foundation \
   --name peer-hub-to-spoke2 \
-  --vnet-name vnet-certlab-hub \
-  --remote-vnet "$( az network vnet show -g rg-certlab-networking -n vnet-certlab-spoke2 --query id -o tsv )" \
+  --vnet-name vnet-az104-lab-hub \
+  --remote-vnet "$( az network vnet show -g rg-az104-lab-networking -n vnet-az104-lab-spoke2 --query id -o tsv )" \
   --allow-vnet-access \
   --allow-forwarded-traffic \
   --allow-gateway-transit
@@ -165,14 +165,14 @@ az network vnet peering create \
 ```bash
 # List VNets in the resource group
 az network vnet list \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --query '[].{Name:name, AddressSpace:addressSpace.addressPrefixes[0]}' \
   -o table
 
 # Show spoke1 subnets
 az network vnet subnet list \
-  --resource-group rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 \
+  --resource-group rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 \
   --query '[].{Name:name, Prefix:addressPrefix, NSG:networkSecurityGroup.id}' \
   -o table
 ```
@@ -182,14 +182,14 @@ az network vnet subnet list \
 ```bash
 # Check peering state (should be "Connected" on both sides)
 az network vnet peering list \
-  --resource-group rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke1 \
+  --resource-group rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke1 \
   --query '[].{Name:name, State:peeringState, Forwarding:allowForwardedTraffic}' \
   -o table
 
 az network vnet peering list \
-  --resource-group rg-certlab-networking \
-  --vnet-name vnet-certlab-spoke2 \
+  --resource-group rg-az104-lab-networking \
+  --vnet-name vnet-az104-lab-spoke2 \
   --query '[].{Name:name, State:peeringState, Forwarding:allowForwardedTraffic}' \
   -o table
 ```
@@ -199,15 +199,15 @@ az network vnet peering list \
 ```bash
 # List web NSG rules
 az network nsg rule list \
-  --resource-group rg-certlab-networking \
-  --nsg-name nsg-certlab-web \
+  --resource-group rg-az104-lab-networking \
+  --nsg-name nsg-az104-lab-web \
   --query '[].{Name:name, Priority:priority, Access:access, Port:destinationPortRange, Source:sourceAddressPrefix}' \
   -o table
 
 # List app NSG rules (note the ASG-based source)
 az network nsg rule list \
-  --resource-group rg-certlab-networking \
-  --nsg-name nsg-certlab-app \
+  --resource-group rg-az104-lab-networking \
+  --nsg-name nsg-az104-lab-app \
   -o table
 ```
 
@@ -218,7 +218,7 @@ Once a VM is deployed in a subnet, check its effective NSG rules (AZ-104 exam to
 ```bash
 # Replace with an actual NIC name after deploying a VM in Module 07
 az network nic list-effective-nsg \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --name <nic-name> \
   -o table
 ```
@@ -227,8 +227,8 @@ az network nic list-effective-nsg \
 
 ```bash
 az network public-ip show \
-  --resource-group rg-certlab-networking \
-  --name pip-certlab-web \
+  --resource-group rg-az104-lab-networking \
+  --name pip-az104-lab-web \
   --query '{Name:name, IP:ipAddress, SKU:sku.name, Method:publicIPAllocationMethod}' \
   -o table
 ```
@@ -237,7 +237,7 @@ az network public-ip show \
 
 ```bash
 az network asg list \
-  --resource-group rg-certlab-networking \
+  --resource-group rg-az104-lab-networking \
   --query '[].{Name:name, Location:location}' \
   -o table
 ```
@@ -247,17 +247,17 @@ az network asg list \
 ```bash
 # Remove hub-side peerings first
 az network vnet peering delete \
-  --resource-group rg-certlab-foundation \
-  --vnet-name vnet-certlab-hub \
+  --resource-group rg-az104-lab-foundation \
+  --vnet-name vnet-az104-lab-hub \
   --name peer-hub-to-spoke1
 
 az network vnet peering delete \
-  --resource-group rg-certlab-foundation \
-  --vnet-name vnet-certlab-hub \
+  --resource-group rg-az104-lab-foundation \
+  --vnet-name vnet-az104-lab-hub \
   --name peer-hub-to-spoke2
 
 # Delete the networking resource group
-az group delete --name rg-certlab-networking --yes --no-wait
+az group delete --name rg-az104-lab-networking --yes --no-wait
 ```
 
 ## AZ-104 Exam Relevance

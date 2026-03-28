@@ -94,19 +94,19 @@ The lab uses a **hub-spoke topology**, the most common enterprise Azure network 
 
 ## Resource Group Strategy
 
-Each module deploys into its own resource group following the naming convention `rg-certlab-{module}`:
+Each module deploys into its own resource group following the naming convention `rg-az104-lab-{module}`:
 
 | Resource Group | Module | Contents |
 |----------------|--------|----------|
-| rg-certlab-foundation | 00-foundation | VNets, subnets, shared NSGs, tags |
-| rg-certlab-identity | 01-identity | (Entra ID resources are tenant-level) |
-| rg-certlab-governance | 02-governance | Policy assignments, locks, budgets |
-| rg-certlab-networking | 03-networking | Peering, NSGs, ASGs, public IPs |
-| rg-certlab-dns | 04-dns-connectivity | DNS zones, UDRs, Bastion, endpoints |
-| rg-certlab-loadbalancing | 05-load-balancing | Load Balancer, App Gateway, Traffic Manager |
-| rg-certlab-storage | 06-storage | Storage accounts, blob containers, file shares |
-| rg-certlab-compute | 07-compute | VMs, VMSS, ACR, ACI, App Service |
-| rg-certlab-monitoring | 08-monitoring | Log Analytics, alerts, Recovery Services |
+| rg-az104-lab-foundation | 00-foundation | VNets, subnets, shared NSGs, tags |
+| rg-az104-lab-identity | 01-identity | (Entra ID resources are tenant-level) |
+| rg-az104-lab-governance | 02-governance | Policy assignments, locks, budgets |
+| rg-az104-lab-networking | 03-networking | Peering, NSGs, ASGs, public IPs |
+| rg-az104-lab-dns | 04-dns-connectivity | DNS zones, UDRs, Bastion, endpoints |
+| rg-az104-lab-loadbalancing | 05-load-balancing | Load Balancer, App Gateway, Traffic Manager |
+| rg-az104-lab-storage | 06-storage | Storage accounts, blob containers, file shares |
+| rg-az104-lab-compute | 07-compute | VMs, VMSS, ACR, ACI, App Service |
+| rg-az104-lab-monitoring | 08-monitoring | Log Analytics, alerts, Recovery Services |
 
 ---
 
