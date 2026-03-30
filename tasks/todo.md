@@ -53,6 +53,9 @@
 - [x] Deploy Module 00 (Foundation)
 - [x] Create `.github/` folder structure
 - [x] Set up `tasks/` folder with `todo.md` and `lessons.md`
+- [x] Rename resource convention: `certlab` → `az104-lab` (52 files, CertForge prompt, tasks/)
+- [x] Destroy old `rg-certlab-foundation`, redeploy as `rg-az104-lab-foundation`
+- [x] Push all changes upstream (`b69bc9f`)
 
 ---
 

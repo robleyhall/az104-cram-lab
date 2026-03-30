@@ -18,3 +18,13 @@
 **Rule:** After every deployment, run `az resource list --resource-group <rg> -o table` to check for policy-created resources. Don't assume only Bicep-defined resources exist. Document any implicit resources in `tasks/todo.md`.
 
 **Customer talking point:** Enterprise Azure subscriptions often have policies that auto-deploy security resources (NSGs, diagnostic settings, etc.) when you create infrastructure. The naming pattern `{vnet}-{subnet}-nsg-{region}` is a giveaway. Special-purpose subnets like `GatewaySubnet` and `AzureFirewallSubnet` are typically excluded from these policies.
+
+### Lesson 2: Naming convention should be established early
+
+**What happened:** Resources were initially deployed with `certlab` naming, then renamed to `az104-lab` across 52 files. This required destroying and redeploying Azure resources.
+
+**Fix:** Global find-and-replace of `certlab` → `az104-lab` across all Bicep, scripts, exercises, docs, and the CertForge prompt. Destroyed `rg-certlab-foundation` and redeployed as `rg-az104-lab-foundation`.
+
+**Rule:** Establish the naming convention before deploying any resources. Renaming after deployment requires destroy/redeploy cycles. Update the CertForge prompt's naming convention if changing the default.
+
+**Commit:** `b69bc9f`
